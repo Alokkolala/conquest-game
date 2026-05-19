@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import WorldMap from './WorldMap'
 import TerritorySheet from './TerritorySheet'
@@ -17,18 +17,21 @@ interface Props {
 export default function KingdomMapClient({
   width = 390, height = 250,
   initialTerritories,
-  currentUserId,
+  currentUserId: _currentUserId,
   currentUsername = '',
 }: Props) {
   const [territories, setTerritories] = useState<Territory[]>(initialTerritories)
   const [selected, setSelected] = useState<CountryFeature | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // Build ownerMap from live territories: country name → owner username
-  const ownerMap: Record<string, string> = {}
-  for (const t of territories) {
-    if (t.owner?.username) ownerMap[t.name] = t.owner.username
-  }
+  const ownerMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const t of territories) {
+      if (t.owner?.username) map[t.name] = t.owner.username
+    }
+    return map
+  }, [territories])
 
   // Realtime: territory ownership changes
   useEffect(() => {

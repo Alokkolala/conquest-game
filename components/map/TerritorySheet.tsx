@@ -45,10 +45,15 @@ export default function TerritorySheet({ feature, onClose, onClaim, onChallenge,
   return (
     <>
       {/* Backdrop */}
-      <div onClick={onClose} style={{
-        position: 'fixed', inset: 0, zIndex: 45,
-        background: 'rgba(0,0,0,0.12)',
-      }} />
+      <div
+        role="presentation"
+        aria-hidden="true"
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 45,
+          background: 'rgba(0,0,0,0.12)',
+        }}
+      />
 
       {/* Sheet */}
       <div style={{
@@ -112,17 +117,10 @@ export default function TerritorySheet({ feature, onClose, onClaim, onChallenge,
             )}
           </div>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Form</div>
-            <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
-              {(['W','W','L','W','L'] as const).map((r, i) => (
-                <div key={i} style={{
-                  width: 14, height: 18, borderRadius: 3,
-                  background: r === 'W' ? 'var(--ink)' : 'var(--line)',
-                  color: r === 'W' ? '#fff' : 'var(--muted)',
-                  fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{r}</div>
-              ))}
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Held</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 22, lineHeight: 1, marginTop: 4 }}>
+              {held ?? 0}
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', marginLeft: 3 }}>d</span>
             </div>
           </div>
         </div>
@@ -145,7 +143,7 @@ export default function TerritorySheet({ feature, onClose, onClaim, onChallenge,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             }}>
               {ctaLabel}
-              <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+              <svg width="14" height="12" viewBox="0 0 14 12" fill="none" aria-hidden="true">
                 <path d="M1 6H13M13 6L8 1M13 6L8 11" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
