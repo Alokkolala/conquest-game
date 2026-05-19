@@ -1,34 +1,33 @@
-import { redirect } from 'next/navigation'
 import { createServerClient_ } from '@/lib/supabase-server'
-import HexMap from '@/components/map/HexMap'
-import MapSidebar from '@/components/map/MapSidebar'
-import ProModal from '@/components/ui/ProModal'
+import KingdomMapClient from '@/components/map/KingdomMapClient'
+import TabBar from '@/components/ui/TabBar'
+import ProfileChip from '@/components/ui/ProfileChip'
+import BottomDrawer, { SheetHandle } from '@/components/ui/BottomDrawer'
+import { DEFAULT_COUNTRY_STATUS } from '@/lib/world-territories'
 import type { Profile } from '@/lib/types'
-
-const DISPLAY_COLORS = ['#4a90d9', '#d94a4a', '#4ad94a', '#d9a84a', '#9a4ad9', '#d94a90']
 
 export default async function MapPage() {
   const supabase = await createServerClient_()
-
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth')
 
-  // Fetch or create profile
-  let { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile) {
-    const username = (user.email ?? '').split('@')[0].replace(/[^a-z0-9_]/gi, '') || `player${user.id.slice(0, 5)}`
-    const display_color = DISPLAY_COLORS[Math.floor(Math.random() * DISPLAY_COLORS.length)]
-    const { data: created } = await supabase
+  // Auto-create profile on first login
+  let profile: Profile | null = null
+  if (user) {
+    let { data: existing } = await supabase
       .from('profiles')
-      .insert({ id: user.id, username, display_color })
       .select('*')
+      .eq('id', user.id)
       .single()
-    profile = created
+    if (!existing) {
+      const username = (user.email ?? '').split('@')[0].replace(/[^a-z0-9_]/gi, '') || `player${user.id.slice(0, 5)}`
+      const { data: created } = await supabase
+        .from('profiles')
+        .insert({ id: user.id, username, display_color: '#c8311c' })
+        .select('*')
+        .single()
+      existing = created
+    }
+    profile = existing
   }
 
   // Fetch all territories with owner profile joined
@@ -37,45 +36,167 @@ export default async function MapPage() {
     .select('*, owner:profiles(*)')
     .order('id')
 
-  // Leaderboard: top 10 by territory count
-  const { data: leaderboard } = await supabase
-    .from('profiles')
-    .select('id, username, display_color, territory_count, created_at')
-    .order('territory_count', { ascending: false })
-    .limit(10)
+  // Compute display stats from static DEFAULT_COUNTRY_STATUS
+  const ownedStatic     = Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'owned')
+  const contestedStatic = Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'contested')
+  const kingdomValue    = ownedStatic.reduce((s, t) => s + t.value, 0) +
+    contestedStatic.reduce((s, t) => s + t.value * 0.5, 0)
+  const contestedCount  = contestedStatic.length
+
+  const houseName    = profile ? `House of ${profile.username}` : 'House of Conqueror'
+  const houseInitial = profile ? (profile.username[0] ?? 'C').toUpperCase() : 'C'
+
+  const holdingsList = Object.entries(DEFAULT_COUNTRY_STATUS)
+    .filter(([, v]) => v.status === 'owned' || v.status === 'contested')
+    .map(([name, v]) => ({ name, ...v }))
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a]">
-      {/* Nav */}
-      <nav className="h-12 flex items-center justify-between px-4 border-b border-neutral-800 shrink-0">
-        <h1 className="font-cinzel text-lg font-bold text-[#c8a96e] tracking-widest">
-          CONQUEST
-        </h1>
-        <div className="flex items-center gap-3">
-          {profile && (
-            <span className="text-xs text-neutral-400 flex items-center gap-1.5">
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: profile.display_color }}
-              />
-              {profile.username}
-            </span>
-          )}
-          <ProModal />
-        </div>
-      </nav>
-
-      {/* Body: map + sidebar */}
-      <div className="flex flex-1 overflow-hidden">
-        <HexMap
+    <main style={{
+      width: '100%', maxWidth: 390, margin: '0 auto',
+      minHeight: '100dvh', background: 'var(--bg)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Map — fills upper portion */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 340, background: 'var(--bg)' }}>
+        <KingdomMapClient
+          width={390}
+          height={340}
           initialTerritories={territories ?? []}
-          currentUser={profile as Profile | null}
-        />
-        <MapSidebar
-          currentUser={profile as Profile | null}
-          leaderboard={(leaderboard ?? []) as Profile[]}
+          currentUserId={user?.id}
+          currentUsername={profile?.username ?? ''}
         />
       </div>
-    </div>
+
+      {/* Floating top bar */}
+      <div style={{
+        position: 'absolute', top: 52, left: 0, right: 0, zIndex: 30,
+        padding: '0 16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <ProfileChip name={profile?.username ?? 'Guest'} initial={houseInitial} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <span style={{
+            fontFamily: 'var(--serif)', fontSize: 20, fontStyle: 'italic',
+            letterSpacing: '-0.01em', lineHeight: 1,
+          }}>Conquest</span>
+          <span style={{
+            fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.18em',
+            textTransform: 'uppercase', color: 'var(--muted)',
+          }}>WORLD ATLAS · LIVE</span>
+        </div>
+      </div>
+
+      {/* Contested alert pill */}
+      {contestedCount > 0 && (
+        <div style={{
+          position: 'absolute', top: 108, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 30,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: '#fff', border: '1px solid var(--red)', borderRadius: 999,
+          padding: '7px 14px 7px 10px',
+          boxShadow: '0 8px 24px rgba(200,49,28,0.18)',
+          whiteSpace: 'nowrap',
+        }}>
+          <span style={{
+            width: 7, height: 7, borderRadius: 999, background: 'var(--red)',
+            boxShadow: '0 0 0 4px rgba(200,49,28,0.18)', display: 'inline-block',
+          }} />
+          <span style={{
+            fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600,
+            color: 'var(--red)', letterSpacing: '0.12em', textTransform: 'uppercase',
+          }}>
+            {contestedCount} territor{contestedCount === 1 ? 'y' : 'ies'} under siege
+          </span>
+        </div>
+      )}
+
+      {/* Bottom drawer */}
+      <div style={{ position: 'absolute', bottom: 76, left: 0, right: 0, zIndex: 35 }}>
+        <BottomDrawer>
+          <SheetHandle />
+
+          {/* Kingdom header */}
+          <div style={{ padding: '6px 22px 14px' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Your Kingdom</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
+              <span style={{
+                fontFamily: 'var(--serif)', fontSize: 30, lineHeight: 1,
+                letterSpacing: '-0.02em', fontStyle: 'italic',
+              }}>{houseName}</span>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>#412 · WORLD</span>
+            </div>
+          </div>
+
+          {/* Three stats */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+            padding: '14px 22px 16px',
+            borderTop: '0.5px solid var(--line-soft)',
+            borderBottom: '0.5px solid var(--line-soft)',
+          }}>
+            {[
+              { label: 'Holdings',    value: `${ownedStatic.length}`, suffix: `/ ${Object.keys(DEFAULT_COUNTRY_STATUS).length}` },
+              { label: 'Crown Value', value: `${Math.round(kingdomValue)}`, suffix: 'pts' },
+              { label: 'Streak',      value: '7', suffix: 'W', color: 'var(--red)' },
+            ].map((s, i) => (
+              <div key={s.label} style={{
+                borderRight: i < 2 ? '0.5px solid var(--line-soft)' : 'none',
+                paddingLeft: i > 0 ? 14 : 0,
+                paddingRight: i < 2 ? 12 : 0,
+              }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>{s.label}</div>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: 28, lineHeight: 1, marginTop: 4, color: s.color ?? 'var(--ink)' }}>
+                  {s.value}
+                  {s.suffix && <span style={{ fontFamily: 'var(--mono)', fontSize: s.suffix.length > 3 ? 10 : 13, color: 'var(--muted)', marginLeft: 4 }}>{s.suffix}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Territory list */}
+          <div style={{ padding: '14px 22px 14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Holdings · Today</div>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}>SEE ALL</span>
+            </div>
+            {holdingsList.slice(0, 4).map((t, i) => (
+              <div key={t.name} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 0',
+                borderTop: i === 0 ? 'none' : '0.5px solid var(--line-soft)',
+              }}>
+                <div style={{
+                  width: 8, height: 8, borderRadius: 999, flexShrink: 0,
+                  background: t.status === 'contested' ? 'var(--red)' : 'var(--ink)',
+                  boxShadow: t.status === 'contested' ? '0 0 0 3px rgba(200,49,28,0.15)' : 'none',
+                }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontFamily: 'var(--serif)', fontSize: 18, lineHeight: 1.1,
+                    letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{t.name}</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.12em', marginTop: 3 }}>
+                    {t.status === 'contested' ? 'UNDER SIEGE' : `HELD ${t.held ?? 0}D`}
+                  </div>
+                </div>
+                {t.status === 'contested' ? (
+                  <span style={{
+                    fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700,
+                    letterSpacing: '0.12em', color: 'var(--red)',
+                    padding: '4px 10px', border: '1px solid var(--red)', borderRadius: 999,
+                  }}>DEFEND</span>
+                ) : (
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 16, color: 'var(--ink)' }}>
+                    +{Math.round(t.value * 10) / 10}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </BottomDrawer>
+      </div>
+
+      <TabBar active="map" />
+    </main>
   )
 }
