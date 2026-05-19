@@ -1,41 +1,31 @@
--- Insert 37 territories (owner_id NULL = unclaimed)
--- Run this AFTER schema.sql
-insert into territories (name, hex_q, hex_r) values
-  ('The High Seat',    0,  0),
-  ('Ironhold',         1,  0),
-  ('Goldenport',       0,  1),
-  ('Ashridge',        -1,  1),
-  ('Mistveil',        -1,  0),
-  ('Greyspire',        0, -1),
-  ('Emberglass',       1, -1),
-  ('The Deep Hollow',  2,  0),
-  ('Stonegate',        2, -1),
-  ('The Ember Shelf',  2, -2),
-  ('The Iron Pass',    1, -2),
-  ('The Amber Vale',   0, -2),
-  ('Windfell',        -1, -1),
-  ('The Pale Marsh',  -2,  0),
-  ('The Rust Hills',  -2,  1),
-  ('Copperfield',     -2,  2),
-  ('The Still Water', -1,  2),
-  ('Sunken Gate',      0,  2),
-  ('Driftmark',        1,  1),
-  ('Redmount',         3,  0),
-  ('The Dark Helm',    3, -1),
-  ('Wavecrest',        3, -2),
-  ('Cinderfen',        3, -3),
-  ('The Pale Crown',   2, -3),
-  ('Sandwatch',        1, -3),
-  ('The Raven''s Keep',0, -3),
-  ('Frostmere',       -1, -2),
-  ('Dusthaven',       -2, -1),
-  ('The Black Ford',  -3,  0),
-  ('Thornwall',       -3,  1),
-  ('Coldwater Bay',   -3,  2),
-  ('The Long Shore',  -3,  3),
-  ('The Sable Moor',  -2,  3),
-  ('Crow''s Reach',   -1,  3),
-  ('Northern Ridge',   0,  3),
-  ('Coastal Flats',    1,  2),
-  ('Saltmere',         2,  1)
-on conflict (hex_q, hex_r) do nothing;
+-- Clear old hex territories
+DELETE FROM challenges;
+DELETE FROM territories;
+
+-- Seed world territories (real countries)
+-- hex_q and hex_r are legacy columns — set to 0
+INSERT INTO territories (name, hex_q, hex_r, owner_id) VALUES
+-- CrimsonGuard territories
+('France',         0, 0, (SELECT id FROM profiles WHERE username = 'CrimsonGuard')),
+('Germany',        0, 0, (SELECT id FROM profiles WHERE username = 'CrimsonGuard')),
+('United Kingdom', 0, 0, (SELECT id FROM profiles WHERE username = 'CrimsonGuard')),
+('Australia',      0, 0, (SELECT id FROM profiles WHERE username = 'CrimsonGuard')),
+('Argentina',      0, 0, (SELECT id FROM profiles WHERE username = 'CrimsonGuard')),
+-- AzureCrown territories
+('United States',  0, 0, (SELECT id FROM profiles WHERE username = 'AzureCrown')),
+('Brazil',         0, 0, (SELECT id FROM profiles WHERE username = 'AzureCrown')),
+('Italy',          0, 0, (SELECT id FROM profiles WHERE username = 'AzureCrown')),
+-- VerdantHold territories
+('South Africa',   0, 0, (SELECT id FROM profiles WHERE username = 'VerdantHold')),
+('India',          0, 0, (SELECT id FROM profiles WHERE username = 'VerdantHold')),
+-- ObsidianPact territories
+('Canada',         0, 0, (SELECT id FROM profiles WHERE username = 'ObsidianPact')),
+-- Bot-only territories (these bots may not exist in seed, handle with subquery)
+('Russia',         0, 0, (SELECT id FROM profiles WHERE username = 'Korchnoi_IV')),
+('China',          0, 0, (SELECT id FROM profiles WHERE username = 'TigerOf64')),
+('Japan',          0, 0, (SELECT id FROM profiles WHERE username = 'Hoshino'))
+ON CONFLICT DO NOTHING;
+
+-- Refresh territory_count for each profile
+UPDATE profiles p
+SET territory_count = (SELECT COUNT(*) FROM territories WHERE owner_id = p.id);
