@@ -4,13 +4,14 @@ import type { CountryFeature } from '@/lib/types'
 
 interface Props {
   feature: CountryFeature
+  isNewUser?: boolean
   onClose: () => void
   onClaim?: () => void
   onChallenge?: () => void
   onDefend?: () => void
 }
 
-export default function TerritorySheet({ feature, onClose, onClaim, onChallenge, onDefend }: Props) {
+export default function TerritorySheet({ feature, isNewUser = false, onClose, onClaim, onChallenge, onDefend }: Props) {
   const { name, status, owner, ownerElo, value, held } = feature
 
   function handleCTA() {
@@ -24,6 +25,7 @@ export default function TerritorySheet({ feature, onClose, onClaim, onChallenge,
     status === 'enemy'     ? 'Challenge for Territory' :
     status === 'contested' ? 'Defend Now'              :
     status === 'owned'     ? 'Garrison · Manage'       :
+    isNewUser              ? 'Plant Your Banner'        :
     'Claim Territory'
 
   const statusLabel =
@@ -40,6 +42,7 @@ export default function TerritorySheet({ feature, onClose, onClaim, onChallenge,
     status === 'enemy'     ? `Take ${name} from ${owner} in a single game. Win and the flag flips.` :
     status === 'contested' ? 'Your hold is under siege. Win the next match or the territory falls.' :
     status === 'owned'     ? `This territory pays you ${Math.round(value)} pts daily. Defend on challenge.` :
+    isNewUser              ? 'Your first territory. Plant your banner here to begin your conquest.' :
     'Unclaimed. First win plants your banner.'
 
   return (

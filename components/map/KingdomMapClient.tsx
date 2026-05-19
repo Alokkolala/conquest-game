@@ -12,6 +12,7 @@ interface Props {
   initialTerritories: Territory[]
   currentUserId?: string
   currentUsername?: string
+  isNewUser?: boolean
 }
 
 export default function KingdomMapClient({
@@ -19,6 +20,7 @@ export default function KingdomMapClient({
   initialTerritories,
   currentUserId: _currentUserId,
   currentUsername = '',
+  isNewUser = false,
 }: Props) {
   const [territories, setTerritories] = useState<Territory[]>(initialTerritories)
   const [selected, setSelected] = useState<CountryFeature | null>(null)
@@ -61,6 +63,7 @@ export default function KingdomMapClient({
       {selected && (
         <TerritorySheet
           feature={selected}
+          isNewUser={isNewUser}
           onClose={() => setSelected(null)}
           onClaim={() => setSelected(null)}
           onChallenge={() => setSelected(null)}

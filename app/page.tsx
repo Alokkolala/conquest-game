@@ -1,8 +1,8 @@
 import { createServerClient_ } from '@/lib/supabase-server'
 import KingdomMapClient from '@/components/map/KingdomMapClient'
+import KingdomDrawer from '@/components/map/KingdomDrawer'
 import TabBar from '@/components/ui/TabBar'
 import ProfileChip from '@/components/ui/ProfileChip'
-import BottomDrawer, { SheetHandle } from '@/components/ui/BottomDrawer'
 import { DEFAULT_COUNTRY_STATUS } from '@/lib/world-territories'
 import type { Profile } from '@/lib/types'
 
@@ -68,9 +68,15 @@ export default async function MapPage() {
   // Guest fallback: use DEFAULT_COUNTRY_STATUS static data
   const displayOwned    = user ? myTerritories.length : Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'owned').length
   const displayValue    = user ? Math.round(kingdomValue) : Math.round(Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'owned').reduce((s, t) => s + t.value, 0))
-  const displayHoldings = user ? holdingsList : Object.entries(DEFAULT_COUNTRY_STATUS)
-    .filter(([, v]) => v.status === 'owned' || v.status === 'contested')
-    .map(([name, v]) => ({ name, ...v }))
+  const displayHoldings: Array<{ name: string; status: 'owned' | 'contested'; held: number; value: number }> =
+    user ? holdingsList : Object.entries(DEFAULT_COUNTRY_STATUS)
+      .filter(([, v]) => v.status === 'owned' || v.status === 'contested')
+      .map(([name, v]) => ({
+        name,
+        status: v.status as 'owned' | 'contested',
+        held: v.held ?? 0,
+        value: v.value,
+      }))
 
   // Contested alert: show when the user has contested territories (or static demo if guest)
   const alertCount = user ? contestedCount : Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'contested').length
@@ -92,6 +98,7 @@ export default async function MapPage() {
           initialTerritories={territories ?? []}
           currentUserId={user?.id}
           currentUsername={profile?.username ?? ''}
+          isNewUser={user ? myTerritories.length === 0 : false}
         />
       </div>
 
@@ -139,90 +146,13 @@ export default async function MapPage() {
       )}
 
       {/* Bottom drawer */}
-      <div style={{ position: 'absolute', bottom: 76, left: 0, right: 0, zIndex: 35 }}>
-        <BottomDrawer>
-          <SheetHandle />
-
-          {/* Kingdom header */}
-          <div style={{ padding: '6px 22px 14px' }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Your Kingdom</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{
-                fontFamily: 'var(--serif)', fontSize: 30, lineHeight: 1,
-                letterSpacing: '-0.02em', fontStyle: 'italic',
-              }}>{houseName}</span>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>#412 · WORLD</span>
-            </div>
-          </div>
-
-          {/* Three stats */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-            padding: '14px 22px 16px',
-            borderTop: '0.5px solid var(--line-soft)',
-            borderBottom: '0.5px solid var(--line-soft)',
-          }}>
-            {[
-              { label: 'Holdings',    value: String(displayOwned), suffix: `/ ${Object.keys(DEFAULT_COUNTRY_STATUS).length}` },
-              { label: 'Crown Value', value: String(displayValue), suffix: 'pts' },
-              { label: 'Streak',      value: '—', suffix: '', color: 'var(--muted)' }, // TODO: compute from challenges
-            ].map((s, i) => (
-              <div key={s.label} style={{
-                borderRight: i < 2 ? '0.5px solid var(--line-soft)' : 'none',
-                paddingLeft: i > 0 ? 14 : 0,
-                paddingRight: i < 2 ? 12 : 0,
-              }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>{s.label}</div>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: 28, lineHeight: 1, marginTop: 4, color: s.color ?? 'var(--ink)' }}>
-                  {s.value}
-                  {s.suffix && <span style={{ fontFamily: 'var(--mono)', fontSize: s.suffix.length > 3 ? 10 : 13, color: 'var(--muted)', marginLeft: 4 }}>{s.suffix}</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Territory list */}
-          <div style={{ padding: '14px 22px 14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Holdings · Today</div>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}>SEE ALL</span>
-            </div>
-            {displayHoldings.slice(0, 4).map((t, i) => (
-              <div key={t.name} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 0',
-                borderTop: i === 0 ? 'none' : '0.5px solid var(--line-soft)',
-              }}>
-                <div style={{
-                  width: 8, height: 8, borderRadius: 999, flexShrink: 0,
-                  background: t.status === 'contested' ? 'var(--red)' : 'var(--ink)',
-                  boxShadow: t.status === 'contested' ? '0 0 0 3px rgba(200,49,28,0.15)' : 'none',
-                }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontFamily: 'var(--serif)', fontSize: 18, lineHeight: 1.1,
-                    letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{t.name}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.12em', marginTop: 3 }}>
-                    {t.status === 'contested' ? 'UNDER SIEGE' : `HELD ${t.held ?? 0}D`}
-                  </div>
-                </div>
-                {t.status === 'contested' ? (
-                  <span style={{
-                    fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700,
-                    letterSpacing: '0.12em', color: 'var(--red)',
-                    padding: '4px 10px', border: '1px solid var(--red)', borderRadius: 999,
-                  }}>DEFEND</span>
-                ) : (
-                  <span style={{ fontFamily: 'var(--serif)', fontSize: 16, color: 'var(--ink)' }}>
-                    +{Math.round(t.value * 10) / 10}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </BottomDrawer>
-      </div>
+      <KingdomDrawer
+        houseName={houseName}
+        displayOwned={displayOwned}
+        totalTerritories={Object.keys(DEFAULT_COUNTRY_STATUS).length}
+        displayValue={displayValue}
+        holdings={displayHoldings}
+      />
 
       <TabBar active="map" />
     </main>

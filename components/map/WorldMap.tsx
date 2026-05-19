@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import { buildCountryFeatures, VB_W, VB_H } from '@/lib/world-territories'
 import type { CountryFeature, TerritoryStatus } from '@/lib/types'
 
@@ -60,15 +60,80 @@ export default function WorldMap({
     ? features.filter(f => f.status !== 'neutral')
     : []
 
+  // Pan/zoom state
+  const [view, setView] = useState({ x: 0, y: 0, scale: 1 })
+  const dragRef = useRef<{ startX: number; startY: number; viewX: number; viewY: number } | null>(null)
+  const didDragRef = useRef(false)
+  const svgRef = useRef<SVGSVGElement>(null)
+
+  // Convert screen coords to SVG coords
+  function toSVG(clientX: number, clientY: number) {
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!rect) return { x: 0, y: 0 }
+    const scaleX = (VB_W / view.scale) / rect.width
+    const scaleY = (VB_H / view.scale) / rect.height
+    return {
+      x: view.x + (clientX - rect.left) * scaleX,
+      y: view.y + (clientY - rect.top) * scaleY,
+    }
+  }
+
+  function handlePointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    if (e.isPrimary) {
+      didDragRef.current = false
+      dragRef.current = { startX: e.clientX, startY: e.clientY, viewX: view.x, viewY: view.y }
+      ;(e.target as Element).setPointerCapture?.(e.pointerId)
+    }
+  }
+
+  function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
+    if (!dragRef.current || !e.isPrimary) return
+    const dx = (e.clientX - dragRef.current.startX) * (VB_W / view.scale) / (svgRef.current?.getBoundingClientRect().width ?? 390)
+    const dy = (e.clientY - dragRef.current.startY) * (VB_H / view.scale) / (svgRef.current?.getBoundingClientRect().height ?? 250)
+    if (Math.abs(dx) + Math.abs(dy) > 3) didDragRef.current = true
+    setView(v => ({
+      ...v,
+      x: Math.max(0, Math.min(VB_W - VB_W / v.scale, dragRef.current!.viewX - dx)),
+      y: Math.max(0, Math.min(VB_H - VB_H / v.scale, dragRef.current!.viewY - dy)),
+    }))
+  }
+
+  function handlePointerUp() {
+    dragRef.current = null
+  }
+
+  function handleWheel(e: React.WheelEvent<SVGSVGElement>) {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? 0.85 : 1.18
+    const svgPt = toSVG(e.clientX, e.clientY)
+    setView(v => {
+      const newScale = Math.max(1, Math.min(8, v.scale * delta))
+      const newW = VB_W / newScale
+      const newH = VB_H / newScale
+      const newX = svgPt.x - (svgPt.x - v.x) * (newW / (VB_W / v.scale))
+      const newY = svgPt.y - (svgPt.y - v.y) * (newH / (VB_H / v.scale))
+      return {
+        scale: newScale,
+        x: Math.max(0, Math.min(VB_W - newW, newX)),
+        y: Math.max(0, Math.min(VB_H - newH, newY)),
+      }
+    })
+  }
+
   return (
     <svg
+      ref={svgRef}
       role="img"
       aria-label="World territory map"
       width={width}
       height={height}
-      viewBox={`0 0 ${VB_W} ${VB_H}`}
-      preserveAspectRatio="xMidYMid meet"
-      style={{ display: 'block', background: 'var(--bg)' }}
+      viewBox={`${view.x} ${view.y} ${VB_W / view.scale} ${VB_H / view.scale}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onWheel={handleWheel}
+      style={{ display: 'block', background: 'var(--bg)', cursor: dragRef.current ? 'grabbing' : 'grab', touchAction: 'none' }}
     >
       <title>World territory map</title>
       {/* Latitude / longitude hairlines */}
@@ -109,7 +174,7 @@ export default function WorldMap({
             <g
               key={f.id}
               className={flipCls}
-              onClick={() => onCountryClick?.(f)}
+              onClick={() => { if (!didDragRef.current) onCountryClick?.(f) }}
               style={{ cursor: onCountryClick ? 'pointer' : 'default' }}
             >
               <path
