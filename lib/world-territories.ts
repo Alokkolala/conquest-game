@@ -130,15 +130,39 @@ export function geomCentroid(geom: GeoJSON.Geometry): [number, number] {
   return bestCenter
 }
 
+// ── Pre-computed static geo data (paths + centers, computed once) ──
+interface StaticCountry {
+  id: string
+  name: string
+  path: string
+  center: [number, number]
+}
+
+let _staticCountries: StaticCountry[] | null = null
+
+export function getStaticCountries(): StaticCountry[] {
+  if (_staticCountries) return _staticCountries
+  _staticCountries = getWorldFeatures()
+    .map(f => {
+      const id   = String(f.id ?? '')
+      const name = ISO_NUMERIC_TO_NAME[id] ?? id
+      return {
+        id,
+        name,
+        path:   f.geometry ? geomToPath(f.geometry) : '',
+        center: f.geometry ? geomCentroid(f.geometry) : [0, 0] as [number, number],
+      }
+    })
+    .filter(c => c.path !== '')
+  return _staticCountries
+}
+
 // ── Build all CountryFeatures ──────────────────────────────
 export function buildCountryFeatures(
   ownerMap: Record<string, string> = {},
   currentUsername = ''
 ): CountryFeature[] {
-  const features = getWorldFeatures()
-  return features.map(f => {
-    const id    = String(f.id ?? '')
-    const name  = ISO_NUMERIC_TO_NAME[id] ?? id
+  return getStaticCountries().map(({ id, name, path, center }) => {
     const liveOwner = ownerMap[name]
 
     let status: TerritoryStatus = 'neutral'
@@ -167,16 +191,6 @@ export function buildCountryFeatures(
       value         = def.value
     }
 
-    return {
-      id,
-      name,
-      path:   f.geometry ? geomToPath(f.geometry) : '',
-      center: (f.geometry ? geomCentroid(f.geometry) : [0, 0]) as [number, number],
-      status,
-      owner: ownerUsername,
-      ownerElo,
-      value,
-      held,
-    }
-  }).filter(f => f.path !== '')
+    return { id, name, path, center, status, owner: ownerUsername, ownerElo, value, held }
+  })
 }
