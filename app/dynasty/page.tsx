@@ -3,6 +3,7 @@ import TabBar from '@/components/ui/TabBar'
 import { DEFAULT_COUNTRY_STATUS } from '@/lib/world-territories'
 import type { Profile } from '@/lib/types'
 
+// TODO: Replace with live data — fetch from challenges table filtered by user.id
 const RECENT_CAMPAIGNS = [
   { result: 'W' as const, territory: 'France',       vs: 'Korchnoi_IV', delta: '+18', moves: 41 },
   { result: 'W' as const, territory: 'Germany',      vs: 'Anders_1980',  delta: '+11', moves: 64 },
@@ -24,8 +25,9 @@ export default async function DynastyPage() {
     .filter(([, v]) => v.status === 'owned')
     .map(([name, v]) => ({ name, ...v }))
   const crownValue = owned.reduce((s, t) => s + t.value, 0)
-  const houseName    = profile ? `House of ${profile.username}` : 'House of Aldiyar'
-  const houseInitial = profile ? (profile.username[0] ?? 'A').toUpperCase() : 'A'
+  const username = profile?.username ?? 'Conqueror'
+  const houseName    = `House of ${username}`
+  const houseInitial = (username[0] ?? 'C').toUpperCase()
   const houseOfIdx   = houseName.lastIndexOf(' of ')
   const houseLineA   = houseOfIdx >= 0 ? houseName.slice(0, houseOfIdx + 4) : houseName
   const houseLineB   = houseOfIdx >= 0 ? houseName.slice(houseOfIdx + 4)    : ''
@@ -41,7 +43,7 @@ export default async function DynastyPage() {
       <div style={{ position: 'relative', paddingTop: 88, paddingBottom: 24, paddingLeft: 22, paddingRight: 22 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>House · Founded 2024</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>House · Founded {profile ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}</div>
             <div style={{
               fontFamily: 'var(--serif)', fontSize: 44, lineHeight: 0.95,
               letterSpacing: '-0.025em', marginTop: 6, fontStyle: 'italic',
@@ -76,7 +78,8 @@ export default async function DynastyPage() {
           </div>
           <div style={{ padding: '16px 18px' }}>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>ELO</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 36, lineHeight: 1, marginTop: 6 }}>1,842</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 36, lineHeight: 1, marginTop: 6 }}>1,842{/* TODO: Replace with profile.elo once column added */}</div>
+            {/* TODO: Compute from recent challenges */}
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--red)', marginTop: 4, letterSpacing: '0.1em' }}>↑ +28 (7-DAY)</div>
           </div>
         </div>
@@ -86,7 +89,7 @@ export default async function DynastyPage() {
             { label: 'Streak',   value: '7W', color: 'var(--red)' },
             { label: 'Win Rate', value: '64', suffix: '%' },
           ].map((s, i) => (
-            <div key={i} style={{
+            <div key={s.label} style={{
               padding: '14px 16px',
               borderRight: i < 2 ? '0.5px solid var(--line-soft)' : 'none',
             }}>
