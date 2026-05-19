@@ -36,14 +36,20 @@ export default async function MapPage() {
     .select('*, owner:profiles(*)')
     .order('id')
 
+  // Fetch active challenges against the user's territories
+  const { data: activeChallenges } = user
+    ? await supabase
+        .from('challenges')
+        .select('territory_id')
+        .eq('defender_id', user.id)
+        .in('status', ['pending', 'active'])
+    : { data: [] }
+
+  const contestedTerritoryIds = new Set((activeChallenges ?? []).map(c => c.territory_id))
+
   // Derive stats from live territories (fall back to DEFAULT_COUNTRY_STATUS if no user)
   const myTerritories = (territories ?? []).filter(t => user && t.owner_id === user.id)
-  const myContested   = myTerritories.filter(t => {
-    // A territory is contested if there's an active challenge against it
-    // For now, check against DEFAULT_COUNTRY_STATUS contested list as a heuristic
-    const def = DEFAULT_COUNTRY_STATUS[t.name]
-    return def?.status === 'contested'
-  })
+  const myContested = myTerritories.filter(t => contestedTerritoryIds.has(t.id))
 
   const kingdomValue = myTerritories.reduce((s, t) => {
     const def = DEFAULT_COUNTRY_STATUS[t.name]
@@ -52,15 +58,12 @@ export default async function MapPage() {
   const contestedCount = myContested.length
 
   // For display list: user's territories
-  const holdingsList = myTerritories.map(t => {
-    const def = DEFAULT_COUNTRY_STATUS[t.name]
-    return {
-      name: t.name,
-      status: myContested.some(c => c.id === t.id) ? 'contested' as const : 'owned' as const,
-      held: def?.held ?? 0,
-      value: def?.value ?? 5,
-    }
-  })
+  const holdingsList = myTerritories.map(t => ({
+    name: t.name,
+    status: contestedTerritoryIds.has(t.id) ? 'contested' as const : 'owned' as const,
+    held: DEFAULT_COUNTRY_STATUS[t.name]?.held ?? 0,
+    value: DEFAULT_COUNTRY_STATUS[t.name]?.value ?? 5,
+  }))
 
   // Guest fallback: use DEFAULT_COUNTRY_STATUS static data
   const displayOwned    = user ? myTerritories.length : Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'owned').length
