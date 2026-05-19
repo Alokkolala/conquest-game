@@ -1,11 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: #0a0a0a;
-  color: #e5e5e5;
-  font-family: 'Inter', system-ui, sans-serif;
+:root {
+  --bg: #f4f1ea;
+  --bg-warm: #ece8df;
+  --ink: #111111;
+  --ink-soft: #2a2520;
+  --muted: #8a8579;
+  --line: #d8d3c6;
+  --line-soft: #e6e2d6;
+  --red: #c8311c;
+  --red-deep: #9b1f10;
+  --red-tint: #f1d6cf;
+  --gold: #b89758;
+  --serif: "Instrument Serif", "Times New Roman", serif;
+  --sans: "Manrope", -apple-system, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
 }
+
+* { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-warm);
+  font-family: var(--sans);
+  color: var(--ink);
+}
+
+/* Scrollbar hide */
+.cq-scroll::-webkit-scrollbar { display: none; }
+.cq-scroll { scrollbar-width: none; }
+
+/* Ambient pulse on contested territories */
+@keyframes cq-pulse {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+.cq-pulse-dot {
+  animation: cq-pulse 1.8s ease-out infinite;
+  transform-origin: center;
+}
+
+/* Territory flip animations (post-match) */
+@keyframes cq-flip-claim {
+  0%   { fill: var(--line); }
+  40%  { fill: var(--red); }
+  100% { fill: var(--ink); }
+}
+@keyframes cq-flip-lose {
+  0%   { fill: var(--ink); }
+  40%  { fill: var(--red); }
+  100% { fill: var(--line); }
+}
+.cq-flipping-win  path,
+.cq-flipping-win  polygon { animation: cq-flip-claim 2.2s ease-out forwards; }
+.cq-flipping-lose path,
+.cq-flipping-lose polygon { animation: cq-flip-lose  2.2s ease-out forwards; }
+
+/* Spinner */
+@keyframes cq-spin { to { transform: rotate(360deg); } }

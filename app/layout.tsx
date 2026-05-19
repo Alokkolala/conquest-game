@@ -9,7 +9,21 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-[#0a0a0a] text-neutral-200 antialiased">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body
+        style={{
+          margin: 0,
+          padding: 0,
+          background: 'var(--bg-warm)',
+          fontFamily: 'var(--sans)',
+          color: 'var(--ink)',
+          minHeight: '100dvh',
+        }}
+      >
         {children}
       </body>
     </html>
