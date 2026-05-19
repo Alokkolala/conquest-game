@@ -56,7 +56,7 @@ export default function AuthPage() {
       }}>
         {sent ? (
           <div style={{ textAlign: 'center', padding: '8px 0' }}>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 24, letterSpacing: '-0.01em' }}>Check your email</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 24, letterSpacing: '-0.01em', fontStyle: 'italic' }}>Check your email</div>
             <p style={{ fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
               The sign-in link is on its way.
             </p>
@@ -65,7 +65,7 @@ export default function AuthPage() {
           <>
             <button onClick={handleGoogle} style={{
               width: '100%', height: 50, borderRadius: 12,
-              background: 'var(--bg)', border: '1px solid var(--line)',
+              background: 'var(--bg)', border: '0.5px solid var(--line)',
               fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 14,
               color: 'var(--ink)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -91,7 +91,7 @@ export default function AuthPage() {
                 value={email} onChange={e => setEmail(e.target.value)} required
                 style={{
                   width: '100%', height: 50, borderRadius: 12,
-                  background: 'var(--bg)', border: '1px solid var(--line)',
+                  background: 'var(--bg)', border: '0.5px solid var(--line)',
                   padding: '0 16px', boxSizing: 'border-box',
                   fontFamily: 'var(--sans)', fontSize: 14,
                   color: 'var(--ink)', outline: 'none',
