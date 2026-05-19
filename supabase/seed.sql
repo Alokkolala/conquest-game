@@ -20,10 +20,10 @@ INSERT INTO territories (name, hex_q, hex_r, owner_id) VALUES
 ('India',          0, 0, (SELECT id FROM profiles WHERE username = 'VerdantHold')),
 -- ObsidianPact territories
 ('Canada',         0, 0, (SELECT id FROM profiles WHERE username = 'ObsidianPact')),
--- Bot-only territories (these bots may not exist in seed, handle with subquery)
-('Russia',         0, 0, (SELECT id FROM profiles WHERE username = 'Korchnoi_IV')),
-('China',          0, 0, (SELECT id FROM profiles WHERE username = 'TigerOf64')),
-('Japan',          0, 0, (SELECT id FROM profiles WHERE username = 'Hoshino'))
+-- ObsidianPact and VerdantHold territories
+('Russia',         0, 0, (SELECT id FROM profiles WHERE username = 'ObsidianPact')),
+('China',          0, 0, (SELECT id FROM profiles WHERE username = 'ObsidianPact')),
+('Japan',          0, 0, (SELECT id FROM profiles WHERE username = 'VerdantHold'))
 ON CONFLICT DO NOTHING;
 
 -- Refresh territory_count for each profile
