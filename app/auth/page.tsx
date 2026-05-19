@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 
 export default function AuthPage() {
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const [email, setEmail]     = useState('')
+  const [sent, setSent]       = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleMagicLink(e: React.FormEvent) {
@@ -29,54 +29,92 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-      <div className="w-full max-w-sm space-y-8 p-8 border border-neutral-800 rounded-lg">
-        <div className="text-center">
-          <h1 className="font-cinzel text-3xl font-bold text-[#c8a96e] tracking-widest">
-            CONQUEST
-          </h1>
-          <p className="mt-2 text-sm text-neutral-500">Territory Chess</p>
-        </div>
+    <div style={{
+      minHeight: '100dvh', background: 'var(--bg)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '32px 24px',
+    }}>
+      {/* Brand */}
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{
+          fontFamily: 'var(--serif)', fontSize: 52, fontStyle: 'italic',
+          letterSpacing: '-0.02em', lineHeight: 1, color: 'var(--ink)',
+        }}>Conquest</div>
+        <div style={{
+          fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.24em',
+          textTransform: 'uppercase', color: 'var(--muted)', marginTop: 8,
+        }}>Territory Chess · World Atlas</div>
+      </div>
 
+      {/* Card */}
+      <div style={{
+        width: '100%', maxWidth: 342,
+        background: '#fff', border: '0.5px solid var(--line)',
+        borderRadius: 22, padding: '28px 24px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
+      }}>
         {sent ? (
-          <p className="text-center text-sm text-neutral-300">
-            Check your email for the sign-in link.
-          </p>
+          <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 24, letterSpacing: '-0.01em' }}>Check your email</div>
+            <p style={{ fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+              The sign-in link is on its way.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-4">
-            <button
-              onClick={handleGoogle}
-              className="w-full py-2.5 px-4 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded text-sm font-medium transition-colors"
-            >
+          <>
+            <button onClick={handleGoogle} style={{
+              width: '100%', height: 50, borderRadius: 12,
+              background: 'var(--bg)', border: '1px solid var(--line)',
+              fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 14,
+              color: 'var(--ink)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
               Continue with Google
             </button>
 
-            <div className="relative flex items-center">
-              <div className="flex-1 border-t border-neutral-800" />
-              <span className="px-3 text-xs text-neutral-600">or</span>
-              <div className="flex-1 border-t border-neutral-800" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+              <div style={{ flex: 1, height: '0.5px', background: 'var(--line)' }} />
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}>OR</span>
+              <div style={{ flex: 1, height: '0.5px', background: 'var(--line)' }} />
             </div>
 
-            <form onSubmit={handleMagicLink} className="space-y-3">
+            <form onSubmit={handleMagicLink} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-700 rounded text-sm focus:outline-none focus:border-[#c8a96e] placeholder-neutral-600"
+                type="email" placeholder="your@email.com"
+                value={email} onChange={e => setEmail(e.target.value)} required
+                style={{
+                  width: '100%', height: 50, borderRadius: 12,
+                  background: 'var(--bg)', border: '1px solid var(--line)',
+                  padding: '0 16px', boxSizing: 'border-box',
+                  fontFamily: 'var(--sans)', fontSize: 14,
+                  color: 'var(--ink)', outline: 'none',
+                }}
               />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 bg-[#c8a96e] hover:bg-[#b8995e] text-black font-semibold rounded text-sm transition-colors disabled:opacity-60"
-              >
+              <button type="submit" disabled={loading} style={{
+                width: '100%', height: 50, borderRadius: 12,
+                background: 'var(--ink)', color: '#fff', border: 'none',
+                fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 13,
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
+              }}>
                 {loading ? 'Sending…' : 'Send Magic Link'}
               </button>
             </form>
-          </div>
+          </>
         )}
       </div>
+
+      <p style={{
+        fontFamily: 'var(--serif)', fontSize: 15, fontStyle: 'italic',
+        color: 'var(--muted)', marginTop: 36, textAlign: 'center', maxWidth: 280, lineHeight: 1.4,
+      }}>Real war, played as chess.</p>
     </div>
   )
 }
