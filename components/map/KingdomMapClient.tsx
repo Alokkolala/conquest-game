@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
-import WorldMap from './WorldMap'
+import EurasiaMap from './EurasiaMap'
 import TerritorySheet from './TerritorySheet'
 import type { Territory, CountryFeature } from '@/lib/types'
 
@@ -53,7 +53,7 @@ export default function KingdomMapClient({
 
   return (
     <>
-      <WorldMap
+      <EurasiaMap
         width={width}
         height={height}
         ownerMap={ownerMap}
