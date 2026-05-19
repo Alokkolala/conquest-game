@@ -3,6 +3,21 @@
 
 ---
 
+## Progress
+
+- **Plan 01 ✅** — Supabase schema (profiles, territories, challenges) + RLS + triggers, seed 37 territories, 4 bot accounts (CrimsonGuard, AzureCrown, VerdantHold, ObsidianPact each own 3 hexes), hex grid rendering with ownership colors + Realtime, MapSidebar (leaderboard), ProModal, auth page, hex-utils with adjacency logic (13 tests passing).
+- **Plan 02 🔄** — Stockfish Web Worker, ChessGame component, /api/claim route, ClaimModal (confirm→play→result), HexMap wired to ClaimModal, mobile-responsive layout (dvh, slide-up drawer). **In progress.**
+- **Remaining:** Plan 03 (challenge flow, /game/[id]), Plan 04 (AI Coach, NotificationBell, Vercel deploy).
+
+**Key codebase facts:**
+- Hex lib: `react-hexgrid` (NOT react-hex-grid)
+- Browser Supabase: `import { createClient } from '@/lib/supabase'`
+- Server Supabase: `import { createServerClient_ } from '@/lib/supabase-server'`
+- Service Supabase: `import { createServiceClient } from '@/lib/supabase'`
+- Auth guard in `middleware.ts` is currently **disabled** (commented out for dev preview)
+
+---
+
 ## What we're building
 
 A chess platform where every game has territorial consequences. The world is a hex grid map. You own hexes. Claim unclaimed territory by beating Stockfish. Steal enemy territory by beating the owner in chess. Win → expand. Lose → shrink. The map IS the leaderboard.

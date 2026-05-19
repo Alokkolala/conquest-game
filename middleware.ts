@@ -26,11 +26,12 @@ export async function middleware(request: NextRequest) {
   const isAuth = request.nextUrl.pathname.startsWith('/auth')
   const isApi  = request.nextUrl.pathname.startsWith('/api')
 
-  if (!user && !isAuth && !isApi) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/auth'
-    return NextResponse.redirect(loginUrl)
-  }
+  // Auth guard temporarily disabled for local preview
+  // if (!user && !isAuth && !isApi) {
+  //   const loginUrl = request.nextUrl.clone()
+  //   loginUrl.pathname = '/auth'
+  //   return NextResponse.redirect(loginUrl)
+  // }
 
   return supabaseResponse
 }
