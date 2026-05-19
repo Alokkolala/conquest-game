@@ -15,3 +15,8 @@ export function createServiceClient() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 }
+
+// NOTE: createServerClient_ is NOT re-exported here because supabase-server.ts
+// imports next/headers, which would bleed into client bundles.
+// Tasks 8/9 must import it from '@/lib/supabase-server', not '@/lib/supabase':
+//   import { createServerClient_ } from '@/lib/supabase-server'

@@ -23,3 +23,6 @@ export async function createServerSupabaseClient() {
     }
   )
 }
+
+// Alias for spec compatibility (Tasks 8/9 import createServerClient_ from @/lib/supabase)
+export { createServerSupabaseClient as createServerClient_ }
