@@ -22,7 +22,7 @@ export default async function MapPage() {
       const username = (user.email ?? '').split('@')[0].replace(/[^a-z0-9_]/gi, '') || `player${user.id.slice(0, 5)}`
       const { data: created } = await supabase
         .from('profiles')
-        .insert({ id: user.id, username, display_color: '#c8311c' })
+        .insert({ id: user.id, username, display_color: (['#c8311c','#1a6b3a','#1c4a8a','#7a3cbf','#b89758','#2a7a6a'] as const)[Math.floor(Math.random() * 6)] })
         .select('*')
         .single()
       existing = created
@@ -36,19 +36,44 @@ export default async function MapPage() {
     .select('*, owner:profiles(*)')
     .order('id')
 
-  // Compute display stats from static DEFAULT_COUNTRY_STATUS
-  const ownedStatic     = Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'owned')
-  const contestedStatic = Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'contested')
-  const kingdomValue    = ownedStatic.reduce((s, t) => s + t.value, 0) +
-    contestedStatic.reduce((s, t) => s + t.value * 0.5, 0)
-  const contestedCount  = contestedStatic.length
+  // Derive stats from live territories (fall back to DEFAULT_COUNTRY_STATUS if no user)
+  const myTerritories = (territories ?? []).filter(t => user && t.owner_id === user.id)
+  const myContested   = myTerritories.filter(t => {
+    // A territory is contested if there's an active challenge against it
+    // For now, check against DEFAULT_COUNTRY_STATUS contested list as a heuristic
+    const def = DEFAULT_COUNTRY_STATUS[t.name]
+    return def?.status === 'contested'
+  })
+
+  const kingdomValue = myTerritories.reduce((s, t) => {
+    const def = DEFAULT_COUNTRY_STATUS[t.name]
+    return s + (def?.value ?? 5)
+  }, 0)
+  const contestedCount = myContested.length
+
+  // For display list: user's territories
+  const holdingsList = myTerritories.map(t => {
+    const def = DEFAULT_COUNTRY_STATUS[t.name]
+    return {
+      name: t.name,
+      status: myContested.some(c => c.id === t.id) ? 'contested' as const : 'owned' as const,
+      held: def?.held ?? 0,
+      value: def?.value ?? 5,
+    }
+  })
+
+  // Guest fallback: use DEFAULT_COUNTRY_STATUS static data
+  const displayOwned    = user ? myTerritories.length : Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'owned').length
+  const displayValue    = user ? Math.round(kingdomValue) : Math.round(Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'owned').reduce((s, t) => s + t.value, 0))
+  const displayHoldings = user ? holdingsList : Object.entries(DEFAULT_COUNTRY_STATUS)
+    .filter(([, v]) => v.status === 'owned' || v.status === 'contested')
+    .map(([name, v]) => ({ name, ...v }))
+
+  // Contested alert: show when the user has contested territories (or static demo if guest)
+  const alertCount = user ? contestedCount : Object.values(DEFAULT_COUNTRY_STATUS).filter(t => t.status === 'contested').length
 
   const houseName    = profile ? `House of ${profile.username}` : 'House of Conqueror'
   const houseInitial = profile ? (profile.username[0] ?? 'C').toUpperCase() : 'C'
-
-  const holdingsList = Object.entries(DEFAULT_COUNTRY_STATUS)
-    .filter(([, v]) => v.status === 'owned' || v.status === 'contested')
-    .map(([name, v]) => ({ name, ...v }))
 
   return (
     <main style={{
@@ -87,7 +112,7 @@ export default async function MapPage() {
       </div>
 
       {/* Contested alert pill */}
-      {contestedCount > 0 && (
+      {alertCount > 0 && (
         <div style={{
           position: 'absolute', top: 108, left: '50%', transform: 'translateX(-50%)',
           zIndex: 30,
@@ -105,7 +130,7 @@ export default async function MapPage() {
             fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600,
             color: 'var(--red)', letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>
-            {contestedCount} territor{contestedCount === 1 ? 'y' : 'ies'} under siege
+            {alertCount} territor{alertCount === 1 ? 'y' : 'ies'} under siege
           </span>
         </div>
       )}
@@ -135,9 +160,9 @@ export default async function MapPage() {
             borderBottom: '0.5px solid var(--line-soft)',
           }}>
             {[
-              { label: 'Holdings',    value: `${ownedStatic.length}`, suffix: `/ ${Object.keys(DEFAULT_COUNTRY_STATUS).length}` },
-              { label: 'Crown Value', value: `${Math.round(kingdomValue)}`, suffix: 'pts' },
-              { label: 'Streak',      value: '7', suffix: 'W', color: 'var(--red)' },
+              { label: 'Holdings',    value: String(displayOwned), suffix: `/ ${Object.keys(DEFAULT_COUNTRY_STATUS).length}` },
+              { label: 'Crown Value', value: String(displayValue), suffix: 'pts' },
+              { label: 'Streak',      value: '—', suffix: '', color: 'var(--muted)' }, // TODO: compute from challenges
             ].map((s, i) => (
               <div key={s.label} style={{
                 borderRight: i < 2 ? '0.5px solid var(--line-soft)' : 'none',
@@ -159,7 +184,7 @@ export default async function MapPage() {
               <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)' }}>Holdings · Today</div>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--muted)', letterSpacing: '0.14em' }}>SEE ALL</span>
             </div>
-            {holdingsList.slice(0, 4).map((t, i) => (
+            {displayHoldings.slice(0, 4).map((t, i) => (
               <div key={t.name} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '10px 0',
