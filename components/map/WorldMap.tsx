@@ -5,16 +5,16 @@ import { buildCountryFeatures, VB_W, VB_H } from '@/lib/world-territories'
 import type { CountryFeature, TerritoryStatus } from '@/lib/types'
 
 function fillFor(status: TerritoryStatus) {
-  if (status === 'owned')     return '#111111'
-  if (status === 'enemy')     return '#3a3530'
-  if (status === 'contested') return '#c8311c'
-  return '#ece8df'
+  if (status === 'owned')     return 'var(--ink)'
+  if (status === 'enemy')     return 'var(--soft)'
+  if (status === 'contested') return 'var(--red)'
+  return 'var(--warm)'
 }
 function strokeFor(status: TerritoryStatus) {
-  if (status === 'owned')     return '#111111'
-  if (status === 'enemy')     return '#2a2520'
-  if (status === 'contested') return '#c8311c'
-  return '#d8d3c6'
+  if (status === 'owned')     return 'var(--ink)'
+  if (status === 'enemy')     return 'var(--soft)'
+  if (status === 'contested') return 'var(--red)'
+  return 'var(--line)'
 }
 function strokeWidthFor(status: TerritoryStatus, isHL: boolean) {
   if (isHL) return 2.5
@@ -25,7 +25,7 @@ function labelColorFor(status: TerritoryStatus) {
   if (status === 'owned')     return '#ffffff'
   if (status === 'enemy')     return '#e6e1d3'
   if (status === 'contested') return '#ffffff'
-  return '#8a8579'
+  return 'var(--muted)'
 }
 
 interface Props {
@@ -53,8 +53,7 @@ export default function WorldMap({
 }: Props) {
   const features = useMemo(
     () => buildCountryFeatures(ownerMap, currentUsername),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(ownerMap), currentUsername]
+    [ownerMap, currentUsername]
   )
 
   const labelFeatures = showLabels
@@ -63,12 +62,15 @@ export default function WorldMap({
 
   return (
     <svg
+      role="img"
+      aria-label="World territory map"
       width={width}
       height={height}
       viewBox={`0 0 ${VB_W} ${VB_H}`}
       preserveAspectRatio="xMidYMid meet"
       style={{ display: 'block', background: 'var(--bg)' }}
     >
+      <title>World territory map</title>
       {/* Latitude / longitude hairlines */}
       <g stroke="var(--line)" strokeWidth="0.4" opacity="0.5">
         {[-60, -30, 0, 30, 60].map(lat => {
