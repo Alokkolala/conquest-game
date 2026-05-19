@@ -1,65 +1,81 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation'
+import { createServerClient_ } from '@/lib/supabase-server'
+import HexMap from '@/components/map/HexMap'
+import MapSidebar from '@/components/map/MapSidebar'
+import ProModal from '@/components/ui/ProModal'
+import type { Profile } from '@/lib/types'
 
-export default function Home() {
+const DISPLAY_COLORS = ['#4a90d9', '#d94a4a', '#4ad94a', '#d9a84a', '#9a4ad9', '#d94a90']
+
+export default async function MapPage() {
+  const supabase = await createServerClient_()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth')
+
+  // Fetch or create profile
+  let { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile) {
+    const username = (user.email ?? '').split('@')[0].replace(/[^a-z0-9_]/gi, '') || `player${user.id.slice(0, 5)}`
+    const display_color = DISPLAY_COLORS[Math.floor(Math.random() * DISPLAY_COLORS.length)]
+    const { data: created } = await supabase
+      .from('profiles')
+      .insert({ id: user.id, username, display_color })
+      .select('*')
+      .single()
+    profile = created
+  }
+
+  // Fetch all territories with owner profile joined
+  const { data: territories } = await supabase
+    .from('territories')
+    .select('*, owner:profiles(*)')
+    .order('id')
+
+  // Leaderboard: top 10 by territory count
+  const { data: leaderboard } = await supabase
+    .from('profiles')
+    .select('id, username, display_color, territory_count, created_at')
+    .order('territory_count', { ascending: false })
+    .limit(10)
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="h-screen flex flex-col bg-[#0a0a0a]">
+      {/* Nav */}
+      <nav className="h-12 flex items-center justify-between px-4 border-b border-neutral-800 shrink-0">
+        <h1 className="font-cinzel text-lg font-bold text-[#c8a96e] tracking-widest">
+          CONQUEST
+        </h1>
+        <div className="flex items-center gap-3">
+          {profile && (
+            <span className="text-xs text-neutral-400 flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: profile.display_color }}
+              />
+              {profile.username}
+            </span>
+          )}
+          <ProModal />
+        </div>
+      </nav>
+
+      {/* Body: map + sidebar */}
+      <div className="flex flex-1 overflow-hidden">
+        <HexMap
+          initialTerritories={territories ?? []}
+          currentUser={profile as Profile | null}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <MapSidebar
+          currentUser={profile as Profile | null}
+          leaderboard={(leaderboard ?? []) as Profile[]}
+        />
+      </div>
     </div>
-  );
+  )
 }
