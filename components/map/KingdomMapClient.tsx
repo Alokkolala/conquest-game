@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ConquestMap from './ConquestMap'
 import MapPanZoom from './MapPanZoom'
@@ -24,9 +24,13 @@ export default function KingdomMapClient({
   isNewUser = false,
 }: Props) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [territories, setTerritories] = useState<Territory[]>(initialTerritories)
   const [selected, setSelected] = useState<CountryFeature | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [welcomeBanner, setWelcomeBanner] = useState(
+    searchParams.get('firstVisit') === '1'
+  )
   const supabase = useMemo(() => createClient(), [])
 
   // Realtime: territory ownership changes
@@ -44,6 +48,18 @@ export default function KingdomMapClient({
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [supabase])
+
+  // Auto-dismiss first-visit welcome banner
+  useEffect(() => {
+    if (!welcomeBanner) return
+    const t = setTimeout(() => setWelcomeBanner(false), 4000)
+    return () => clearTimeout(t)
+  }, [welcomeBanner])
+
+  const firstTerritoryName = useMemo(() => {
+    const t = territories.find(t => t.owner?.username === currentUsername)
+    return t?.name ?? null
+  }, [territories, currentUsername])
 
   // Player's country codes (alpha-2)
   const playerCodes = useMemo(() =>
@@ -151,6 +167,40 @@ export default function KingdomMapClient({
           <div style={{ background: 'var(--bg)', borderRadius: 16, padding: '20px 32px', fontFamily: 'var(--serif)', fontSize: 18, fontStyle: 'italic' }}>
             Preparing battle…
           </div>
+        </div>
+      )}
+      {welcomeBanner && firstTerritoryName && (
+        <div
+          onClick={() => setWelcomeBanner(false)}
+          style={{
+            position: 'fixed',
+            top: 'env(safe-area-inset-top, 16px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            background: 'var(--ink)',
+            color: '#f4f1ea',
+            borderRadius: 14,
+            padding: '12px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            animation: 'cq-banner-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+          }}
+        >
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 2 }}>
+            Banner planted
+          </span>
+          <span style={{ fontFamily: 'var(--serif)', fontSize: 18, fontStyle: 'italic', letterSpacing: '-0.01em' }}>
+            {firstTerritoryName}
+          </span>
+          <span style={{ fontFamily: 'var(--sans)', fontSize: 11, color: 'rgba(244,241,234,0.45)', marginTop: 2 }}>
+            Tap gold territories to expand your empire
+          </span>
         </div>
       )}
     </>
