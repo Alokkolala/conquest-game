@@ -90,8 +90,8 @@ export default async function MapPage() {
       minHeight: '100dvh', background: 'var(--bg)',
       position: 'relative', overflow: 'hidden',
     }}>
-      {/* Map — fills upper portion */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 340, background: 'var(--bg)' }}>
+      {/* Map — fills entire viewport, drawer overlays from bottom */}
+      <div style={{ position: 'absolute', inset: 0 }}>
         <KingdomMapClient
           initialTerritories={territories ?? []}
           currentUserId={user?.id}
@@ -147,7 +147,7 @@ export default async function MapPage() {
       <KingdomDrawer
         houseName={houseName}
         displayOwned={displayOwned}
-        totalTerritories={Object.keys(DEFAULT_COUNTRY_STATUS).length}
+        totalTerritories={144}
         displayValue={displayValue}
         holdings={displayHoldings}
       />

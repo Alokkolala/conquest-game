@@ -28,7 +28,7 @@ export default function ConquestMap({
   botOwnerMap,
   currentUsername,
   isNewUser,
-  size = 'xxl',
+  size = 'responsive' as 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'responsive',
   onCountryClick,
 }: Props) {
   const botColorMap = useMemo(() => buildBotColorMap(), [])
@@ -178,7 +178,7 @@ export default function ConquestMap({
   }, [gameState])
 
   return (
-    <div ref={wrapperRef} style={{ width: '100%', background: '#1a2e45', overflow: 'hidden' }}>
+    <div ref={wrapperRef} style={{ width: '100%', height: '100%', background: '#1a2e45', overflow: 'hidden' }}>
       <WorldMap
         color="#b89758"
         backgroundColor="#1a2e45"
