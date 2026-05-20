@@ -53,9 +53,13 @@ export default function OnboardingPage() {
       .insert({ id: data.user.id, username, display_color: color })
 
     if (profileErr) {
-      // Profile may already exist (duplicate username) — try suffixed
       const fallback = `${username}_${Math.floor(Math.random() * 9000 + 1000)}`
-      await supabase.from('profiles').insert({ id: data.user.id, username: fallback, display_color: color })
+      const { error: fallbackErr } = await supabase.from('profiles').insert({ id: data.user.id, username: fallback, display_color: color })
+      if (fallbackErr) {
+        setError('Could not create your profile. Please try again.')
+        setLoading(false)
+        return
+      }
     }
 
     router.push('/')
@@ -117,7 +121,7 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
       </div>
 
       <div style={{ width: '100%', zIndex: 1 }}>
-        <StepDots total={5} current={0} dark />
+        <StepDots total={6} current={0} dark />
         <button onClick={onNext} style={{
           width: '100%', height: 58, borderRadius: 16, marginTop: 16,
           background: '#f4f1ea', color: 'var(--ink)', border: 'none',
@@ -144,7 +148,7 @@ function StepCredentials({ email, password, onEmail, onPassword, onNext }: {
   const canProceed = email.includes('@') && password.length >= 6
   return (
     <div style={{ minHeight: '100dvh', width: '100%', maxWidth: 390, margin: '0 auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: '60px 24px env(safe-area-inset-bottom, 40px)' }}>
-      <StepDots total={5} current={1} />
+      <StepDots total={6} current={1} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Step 1 of 5</div>
         <div style={{ fontFamily: 'var(--serif)', fontSize: 38, fontStyle: 'italic', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>Secure Your Realm</div>
@@ -174,7 +178,7 @@ function StepCredentials({ email, password, onEmail, onPassword, onNext }: {
 function StepHouseName({ name, onChange, displayName, onNext }: { name: string; onChange: (v: string) => void; displayName: string; onNext: () => void }) {
   return (
     <div style={{ minHeight: '100dvh', width: '100%', maxWidth: 390, margin: '0 auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: '60px 24px env(safe-area-inset-bottom, 40px)' }}>
-      <StepDots total={5} current={2} />
+      <StepDots total={6} current={2} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Step 2 of 5</div>
         <div style={{ fontFamily: 'var(--serif)', fontSize: 38, fontStyle: 'italic', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>Name Your House</div>
@@ -203,7 +207,7 @@ function StepHouseName({ name, onChange, displayName, onNext }: { name: string; 
 function StepBannerColor({ color, onChange, displayName, onNext }: { color: string; onChange: (v: string) => void; displayName: string; onNext: () => void }) {
   return (
     <div style={{ minHeight: '100dvh', width: '100%', maxWidth: 390, margin: '0 auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: '60px 24px env(safe-area-inset-bottom, 40px)' }}>
-      <StepDots total={5} current={3} />
+      <StepDots total={6} current={3} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10, alignSelf: 'flex-start' }}>Step 3 of 5</div>
         <div style={{ fontFamily: 'var(--serif)', fontSize: 38, fontStyle: 'italic', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8, alignSelf: 'flex-start' }}>Choose Your Standard</div>
@@ -235,7 +239,7 @@ function StepBannerColor({ color, onChange, displayName, onNext }: { color: stri
 function StepStartingRegion({ selected, onSelect, onNext }: { selected: number | null; onSelect: (i: number) => void; onNext: () => void }) {
   return (
     <div style={{ minHeight: '100dvh', width: '100%', maxWidth: 390, margin: '0 auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: '60px 24px env(safe-area-inset-bottom, 40px)' }}>
-      <StepDots total={5} current={4} />
+      <StepDots total={6} current={4} />
       <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Step 4 of 5</div>
       <div style={{ fontFamily: 'var(--serif)', fontSize: 38, fontStyle: 'italic', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>Where Will You Rise?</div>
       <p style={{ fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 24 }}>Choose your starting region.</p>
