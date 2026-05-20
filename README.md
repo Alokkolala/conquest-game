@@ -14,7 +14,9 @@ The map itself is shareable content. Peak kingdom screenshot — "I built this o
 
 ## Why it makes money
 
-Territory creates status. Status is what people pay for. The Pro upgrade path is already in the app: custom territory themes, piece skins, priority matchmaking. Seasonal resets — every 30 days the map wipes, rankings preserved — mean players buy cosmetics before each new season to establish presence from day one. That's a recurring revenue cycle built into the core loop, not bolted on.
+Free players can claim one country per day. That's enough to feel the game, not enough to compete. Anyone serious about building a kingdom hits that wall fast and upgrades.
+
+Territory creates status. Status is what people pay for. The Pro upgrade unlocks unlimited claims, custom territory themes, piece skins, and priority matchmaking. Seasonal resets — every 30 days the map wipes, rankings preserved — mean players buy Pro before each new season to establish presence from day one. That's a recurring revenue cycle built into the core loop, not bolted on.
 
 ## What's built
 
@@ -29,5 +31,43 @@ Territory creates status. Status is what people pay for. The Pro upgrade path is
 Next.js 16, Supabase (auth + DB + Realtime), chess.js, react-chessboard, Stockfish 18 WASM, react-svg-worldmap, Vercel
 
 ## Live
+
+https://conquest-game.vercel.app
+
+---
+
+# Conquest (на русском)
+
+Шахматы, где каждый ход имеет последствия на карте мира.
+
+Вы начинаете с одной страны. Чтобы расширяться — побейте Stockfish. Чтобы захватить чужую территорию — бросьте вызов её владельцу. Победитель забирает землю. Карта и есть таблица лидеров. Самое большое королевство — самый сильный игрок. Всё понятно с первого взгляда.
+
+Главное отличие от всех шахматных приложений: вы можете терять территории, пока вас нет онлайн. Кто-то бросает вызов вашей стране ночью, и вы просыпаетесь с уведомлением. Теперь нужно зайти в приложение — не чтобы тренироваться и не ради рейтинга, а потому что ваше королевство под угрозой. Chess.com такого не даёт.
+
+## Почему это растёт
+
+Игрок А побеждает Игрока Б и забирает его лучшую территорию. Игрок Б в ярости. Он делает скриншот своего рухнувшего королевства и постит в шахматный Telegram-чат: "Кто-то уничтожил моё королевство, нужны союзники." Три друга скачивают приложение, чтобы помочь. Злость — лучший канал привлечения. Каждое поражение — событие для вербовки.
+
+Сама карта — это контент. Скриншот пика королевства — "Я строил это три недели" — именно то, что люди постят. Карта мира со всеми королевствами меняется каждый день и всегда достойна скриншота.
+
+## Почему это приносит деньги
+
+Бесплатные игроки могут захватить одну страну в день. Этого хватит, чтобы почувствовать игру, но не хватит, чтобы конкурировать. Все, кто серьёзно хочет строить королевство, быстро упираются в этот лимит и переходят на Pro.
+
+Территория создаёт статус. Статус — это то, за что люди платят. Pro открывает неограниченные захваты, кастомные темы территорий, скины фигур и приоритетный матчмейкинг. Сезонные сбросы — каждые 30 дней карта обнуляется, рейтинги сохраняются — значит, игроки покупают Pro перед каждым новым сезоном, чтобы заявить о себе с первого дня. Это цикл повторяющейся выручки, встроенный в основной геймплей, а не прикрученный сбоку.
+
+## Что сделано
+
+- Полные правила шахмат через chess.js + Stockfish 18 (глубина 10) в Web Worker
+- Карта мира с реальным владением — каждая страна покрашена цветом владельца, обновляется в реальном времени через Supabase Realtime
+- Логика территорий: нейтральные страны можно захватывать, вражеские — атаковать, если они граничат с вашими
+- Авторизация (email + пароль), профили игроков, страница династии с историей кампаний
+- Кнопка "Upgrade to Pro" в навигации
+
+## Стек
+
+Next.js 16, Supabase (auth + DB + Realtime), chess.js, react-chessboard, Stockfish 18 WASM, react-svg-worldmap, Vercel
+
+## Живой проект
 
 https://conquest-game.vercel.app
