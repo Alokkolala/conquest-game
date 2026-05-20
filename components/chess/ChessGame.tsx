@@ -109,7 +109,10 @@ export default function ChessGame({
 
   async function resolveChallenge(result: 'won' | 'lost' | 'draw') {
     setResolving(true)
-    const winner = result === 'won' ? 'challenger' : 'defender'
+    const winner: 'challenger' | 'defender' =
+      result === 'won'
+        ? (playerColor === 'w' ? 'challenger' : 'defender')
+        : (playerColor === 'w' ? 'defender' : 'challenger')
     try {
       await fetch('/api/resolve', {
         method: 'POST',
