@@ -172,6 +172,7 @@ export default function ChessGame({
   function onPieceDrag({ square }: PieceHandlerArgs) {
     if (statusRef.current !== 'playing') return
     if (gameRef.current.turn() !== playerColor) return
+    if (!square) return
     setSelectedSquare(square)
     setLegalSquares(computeLegalSquares(square))
   }
