@@ -35,7 +35,7 @@ function getLabelColor(status: CountryFeature['status']) {
 export default function CountryShape({ feature, isHighlighted = false, isDragging, onCountryClick }: Props) {
   const [hovered, setHovered] = useState(false)
   const { name, path, center, status, owner } = feature
-  const [cx, cy] = center
+  const [cx, cy] = center ?? [0, 0]
 
   const fill   = getFill(status, hovered)
   const stroke = getStroke(status, hovered, isHighlighted)

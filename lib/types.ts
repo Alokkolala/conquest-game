@@ -22,8 +22,8 @@ export type TerritoryStatus = 'owned' | 'enemy' | 'contested' | 'neutral'
 export interface CountryFeature {
   id: string            // ISO numeric code e.g. "250"
   name: string          // display name e.g. "France"
-  path: string          // SVG path string
-  center: [number, number]   // SVG [x, y] centroid
+  path?: string          // SVG path string
+  center?: [number, number]   // SVG [x, y] centroid
   status: TerritoryStatus
   owner?: string        // username of owner (for enemy/contested)
   ownerElo?: number

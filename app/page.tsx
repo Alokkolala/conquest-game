@@ -93,8 +93,6 @@ export default async function MapPage() {
       {/* Map — fills upper portion */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 340, background: 'var(--bg)' }}>
         <KingdomMapClient
-          width={390}
-          height={340}
           initialTerritories={territories ?? []}
           currentUserId={user?.id}
           currentUsername={profile?.username ?? ''}

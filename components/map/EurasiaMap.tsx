@@ -39,7 +39,7 @@ export default function EurasiaMap({
   // Filter to Eurasia by centroid position
   const eurasiaFeatures = useMemo(() =>
     features.filter(f => {
-      const [cx, cy] = f.center
+      const [cx, cy] = f.center ?? [0, 0]
       return cx >= 380 && cx <= 1010 && cy >= 15 && cy <= 290
     }),
     [features]

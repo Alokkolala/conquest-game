@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
-import EurasiaMap from './EurasiaMap'
+import ConquestMap from './ConquestMap'
 import TerritorySheet from './TerritorySheet'
 import type { Territory, CountryFeature } from '@/lib/types'
+import { NAME_TO_ALPHA2 } from '@/lib/country-codes'
+import { buildBotOwnerMap } from '@/lib/game-state'
 
 interface Props {
-  width?: number
-  height?: number
   initialTerritories: Territory[]
   currentUserId?: string
   currentUsername?: string
@@ -16,7 +16,6 @@ interface Props {
 }
 
 export default function KingdomMapClient({
-  width = 390, height = 250,
   initialTerritories,
   currentUserId: _currentUserId,
   currentUsername = '',
@@ -25,15 +24,6 @@ export default function KingdomMapClient({
   const [territories, setTerritories] = useState<Territory[]>(initialTerritories)
   const [selected, setSelected] = useState<CountryFeature | null>(null)
   const supabase = useMemo(() => createClient(), [])
-
-  // Build ownerMap from live territories: country name → owner username
-  const ownerMap = useMemo(() => {
-    const map: Record<string, string> = {}
-    for (const t of territories) {
-      if (t.owner?.username) map[t.name] = t.owner.username
-    }
-    return map
-  }, [territories])
 
   // Realtime: territory ownership changes
   useEffect(() => {
@@ -51,13 +41,35 @@ export default function KingdomMapClient({
     return () => { supabase.removeChannel(channel) }
   }, [supabase])
 
+  // Player's country codes (alpha-2)
+  const playerCodes = useMemo(() => {
+    return territories
+      .filter(t => t.owner?.username === currentUsername)
+      .map(t => NAME_TO_ALPHA2[t.name] ?? '')
+      .filter(Boolean)
+  }, [territories, currentUsername])
+
+  // Bot owner map from live territories: alpha-2 → bot username
+  const liveBotOwnerMap = useMemo(() => {
+    const staticBotMap = buildBotOwnerMap()
+    const liveMap: Record<string, string> = { ...staticBotMap }
+    for (const t of territories) {
+      const code = NAME_TO_ALPHA2[t.name]
+      if (code && t.owner?.username && t.owner.username !== currentUsername) {
+        liveMap[code] = t.owner.username
+      }
+    }
+    return liveMap
+  }, [territories, currentUsername])
+
   return (
     <>
-      <EurasiaMap
-        width={width}
-        height={height}
-        ownerMap={ownerMap}
+      <ConquestMap
+        playerCodes={playerCodes}
+        botOwnerMap={liveBotOwnerMap}
         currentUsername={currentUsername}
+        isNewUser={isNewUser}
+        size="xxl"
         onCountryClick={setSelected}
       />
       {selected && (
