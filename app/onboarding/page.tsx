@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import CountryPickerMap from '@/components/onboarding/CountryPickerMap'
 
 const BANNER_COLORS = [
   { value: '#c8311c', label: 'Crimson'  },
@@ -13,12 +14,6 @@ const BANNER_COLORS = [
   { value: '#2a7a6a', label: 'Jade'     },
 ]
 
-const STARTING_REGIONS = [
-  { name: 'Western Europe', countries: ['France', 'Germany', 'United Kingdom'], desc: 'Wealthy and contested — high risk, high reward' },
-  { name: 'Eastern Europe', countries: ['Poland', 'Ukraine', 'Romania'], desc: 'Vast plains and ancient kingdoms to claim' },
-  { name: 'Central Asia',   countries: ['Kazakhstan', 'Uzbekistan'], desc: 'Ancient trade routes under open skies' },
-  { name: 'East Asia',      countries: ['Japan', 'South Korea'], desc: 'Island fortresses and precision warfare' },
-]
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -27,7 +22,8 @@ export default function OnboardingPage() {
   const [password, setPassword]       = useState('')
   const [houseName, setHouseName]     = useState('')
   const [color, setColor]             = useState(BANNER_COLORS[0].value)
-  const [region, setRegion]           = useState<number | null>(null)
+  const [countryCode, setCountryCode] = useState<string | null>(null)
+  const [countryName, setCountryName] = useState<string>('')
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
 
@@ -62,7 +58,20 @@ export default function OnboardingPage() {
       }
     }
 
-    router.push('/')
+    // 3. Claim starting territory if the user selected one
+    if (countryCode && countryName) {
+      try {
+        await fetch('/api/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ territory_name: countryName }),
+        })
+      } catch {
+        // Non-fatal — user can claim from the map later
+      }
+    }
+
+    router.push('/?firstVisit=1')
   }
 
   const steps = [
@@ -72,7 +81,9 @@ export default function OnboardingPage() {
       onNext={() => setStep(2)} />,
     <StepHouseName key={2} name={houseName} onChange={setHouseName} displayName={displayName} onNext={() => setStep(3)} />,
     <StepBannerColor key={3} color={color} onChange={setColor} displayName={displayName} onNext={() => setStep(4)} />,
-    <StepStartingRegion key={4} selected={region} onSelect={setRegion} onNext={() => setStep(5)} />,
+    <StepCountryPicker key={4} selectedCode={countryCode} selectedName={countryName}
+      onSelect={(code, name) => { setCountryCode(code); setCountryName(name) }}
+      onNext={() => setStep(5)} />,
     <StepReady key={5} displayName={displayName} color={color}
       loading={loading} error={error}
       onEnter={handleCreate} />,
@@ -235,48 +246,81 @@ function StepBannerColor({ color, onChange, displayName, onNext }: { color: stri
   )
 }
 
-/* ─── Step 4: Starting Region ─────────────────────── */
-function StepStartingRegion({ selected, onSelect, onNext }: { selected: number | null; onSelect: (i: number) => void; onNext: () => void }) {
+/* ─── Step 4: Country Picker ──────────────────────── */
+function StepCountryPicker({ selectedCode, selectedName, onSelect, onNext }: {
+  selectedCode: string | null
+  selectedName: string
+  onSelect: (code: string, name: string) => void
+  onNext: () => void
+}) {
   return (
-    <div style={{ minHeight: '100dvh', width: '100%', maxWidth: 390, margin: '0 auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: '60px 24px env(safe-area-inset-bottom, 40px)' }}>
-      <StepDots total={6} current={4} />
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 }}>Step 4 of 5</div>
-      <div style={{ fontFamily: 'var(--serif)', fontSize: 38, fontStyle: 'italic', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>Where Will You Rise?</div>
-      <p style={{ fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 24 }}>Choose your starting region.</p>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {STARTING_REGIONS.map((r, i) => {
-          const isSelected = selected === i
-          return (
-            <button key={i} onClick={() => onSelect(i)} style={{
-              width: '100%', padding: '16px 18px', borderRadius: 16,
-              background: isSelected ? 'var(--ink)' : '#fff',
-              border: isSelected ? '0.5px solid var(--ink)' : '0.5px solid var(--line)',
-              cursor: 'pointer', textAlign: 'left',
-              display: 'flex', alignItems: 'center', gap: 14,
-              transition: 'background 0.2s, border 0.2s',
-            }}>
-              <div style={{ width: 20, height: 20, borderRadius: 999, flexShrink: 0, border: `2px solid ${isSelected ? '#f4f1ea' : 'var(--line)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {isSelected && <div style={{ width: 8, height: 8, borderRadius: 999, background: '#f4f1ea' }} />}
-              </div>
-              <div>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: 18, letterSpacing: '-0.01em', color: isSelected ? '#f4f1ea' : 'var(--ink)', lineHeight: 1.2 }}>{r.name}</div>
-                <div style={{ fontFamily: 'var(--sans)', fontSize: 12, color: isSelected ? 'rgba(244,241,234,0.55)' : 'var(--muted)', marginTop: 3 }}>{r.desc}</div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: isSelected ? 'rgba(244,241,234,0.4)' : 'var(--muted)', marginTop: 5, letterSpacing: '0.1em' }}>{r.countries.join(' · ')}</div>
-              </div>
-            </button>
-          )
-        })}
+    <div style={{
+      minHeight: '100dvh', width: '100%',
+      background: '#1a2e45',
+      display: 'flex', flexDirection: 'column',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Header overlay */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
+        padding: 'env(safe-area-inset-top, 52px) 24px 20px',
+        background: 'linear-gradient(to bottom, rgba(26,46,69,0.97) 55%, transparent)',
+        pointerEvents: 'none',
+      }}>
+        <StepDots total={6} current={4} dark />
+        <div style={{
+          fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.2em',
+          textTransform: 'uppercase', color: 'rgba(244,241,234,0.4)', marginBottom: 8,
+        }}>
+          Step 4 of 5
+        </div>
+        <div style={{
+          fontFamily: 'var(--serif)', fontSize: 30, fontStyle: 'italic',
+          color: '#f4f1ea', lineHeight: 1.1, letterSpacing: '-0.02em',
+        }}>
+          {selectedCode ? selectedName : 'Where Will You Rise?'}
+        </div>
+        <div style={{
+          fontFamily: 'var(--sans)', fontSize: 13,
+          color: 'rgba(244,241,234,0.45)', marginTop: 5,
+        }}>
+          {selectedCode
+            ? 'Your banner will fly here first'
+            : 'Tap any gold territory to plant your banner'}
+        </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
-        <button onClick={onNext} disabled={selected === null} style={{
-          width: '100%', height: 56, borderRadius: 16,
-          background: selected !== null ? 'var(--ink)' : 'var(--line)',
-          color: selected !== null ? '#f4f1ea' : 'var(--muted)', border: 'none',
-          fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15,
-          letterSpacing: '0.06em', cursor: selected !== null ? 'pointer' : 'not-allowed',
-        }}>Plant My Banner Here</button>
-        <button onClick={onNext} style={{ width: '100%', height: 44, borderRadius: 16, background: 'transparent', color: 'var(--muted)', border: 'none', fontFamily: 'var(--sans)', fontSize: 13, cursor: 'pointer' }}>
-          I&apos;ll choose on the map
+
+      {/* Map — fills entire screen */}
+      <div style={{ flex: 1, width: '100%', height: '100dvh' }}>
+        <CountryPickerMap selectedCode={selectedCode} onSelect={onSelect} />
+      </div>
+
+      {/* Bottom CTA */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20,
+        padding: '20px 24px env(safe-area-inset-bottom, 32px)',
+        background: 'linear-gradient(to top, rgba(26,46,69,0.97) 55%, transparent)',
+      }}>
+        <button
+          onClick={onNext}
+          disabled={!selectedCode}
+          style={{
+            width: '100%', height: 58, borderRadius: 16, border: 'none',
+            background: selectedCode ? '#f4f1ea' : 'rgba(244,241,234,0.12)',
+            color: selectedCode ? 'var(--ink)' : 'rgba(244,241,234,0.25)',
+            fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15,
+            letterSpacing: '0.05em',
+            cursor: selectedCode ? 'pointer' : 'not-allowed',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            transition: 'background 0.2s, color 0.2s',
+          }}
+        >
+          {selectedCode ? `Claim ${selectedName}` : 'Select a Territory First'}
+          {selectedCode && (
+            <svg width="14" height="12" viewBox="0 0 14 12" fill="none" aria-hidden="true">
+              <path d="M1 6H13M13 6L8 1M13 6L8 11" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
         </button>
       </div>
     </div>
