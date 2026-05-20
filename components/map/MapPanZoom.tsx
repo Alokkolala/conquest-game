@@ -13,7 +13,11 @@ export default function MapPanZoom({ children, minScale = 1, maxScale = 5 }: Pro
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
   const [isDragging, setIsDragging] = useState(false)
   const transformRef = useRef(transform)
-  const dragRef = useRef<{ startX: number; startY: number; tx: number; ty: number } | null>(null)
+  const dragRef = useRef<{
+    startX: number; startY: number
+    tx: number; ty: number
+    captured: boolean
+  } | null>(null)
   const touchRef = useRef<{ dist: number; tx: number; ty: number; scale: number } | null>(null)
 
   // Keep transformRef in sync so imperative handlers can read current transform
@@ -31,18 +35,35 @@ export default function MapPanZoom({ children, minScale = 1, maxScale = 5 }: Pro
   }
 
   // Pointer drag handlers (React synthetic — no preventDefault needed)
+  //
+  // Strategy: do NOT capture on pointerdown — that would intercept click events.
+  // Only capture after the user moves past DRAG_THRESHOLD, clearly signalling a pan.
+  // In handlePointerUp, if capture was used but total travel was tiny (< TAP_MAX),
+  // the user meant to tap: dispatch a click at the pointer coordinates so the SVG
+  // path underneath receives the event (browser skips synthesizing click when capture
+  // redirected pointerup to a different element).
+  const DRAG_THRESHOLD = 12  // px to start capturing for pan
+  const TAP_MAX = 24          // px: if total travel < this despite capture, treat as tap
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!e.isPrimary) return
     const { x, y } = transformRef.current
-    dragRef.current = { startX: e.clientX, startY: e.clientY, tx: x, ty: y }
-    ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
-    setIsDragging(true)
+    dragRef.current = { startX: e.clientX, startY: e.clientY, tx: x, ty: y, captured: false }
   }, [])
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current || !e.isPrimary) return
     const dx = e.clientX - dragRef.current.startX
     const dy = e.clientY - dragRef.current.startY
+
+    // Only start capturing/panning once we cross the threshold
+    if (!dragRef.current.captured) {
+      if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return
+      ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+      dragRef.current.captured = true
+      setIsDragging(true)
+    }
+
     const rawX = dragRef.current.tx + dx
     const rawY = dragRef.current.ty + dy
     setTransform(prev => {
@@ -52,9 +73,28 @@ export default function MapPanZoom({ children, minScale = 1, maxScale = 5 }: Pro
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!e.isPrimary) { dragRef.current = null; setIsDragging(false); return }
+    const drag = dragRef.current
     dragRef.current = null
     setIsDragging(false)
+
+    // If capture was set (pointer was redirected to the container) but the total
+    // movement was small enough to be a tap, manually fire a click on the actual
+    // visual element under the finger — the browser won't synthesize one itself.
+    if (drag?.captured) {
+      const totalDist = Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY)
+      if (totalDist < TAP_MAX) {
+        const el = document.elementFromPoint(e.clientX, e.clientY)
+        if (el) {
+          el.dispatchEvent(new MouseEvent('click', {
+            bubbles: true, cancelable: true, view: window,
+            clientX: e.clientX, clientY: e.clientY,
+          }))
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Wheel and touch: attach imperatively with { passive: false } so preventDefault works

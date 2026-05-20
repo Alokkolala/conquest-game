@@ -1,6 +1,7 @@
 import { createServerClient_ } from '@/lib/supabase-server'
 import TabBar from '@/components/ui/TabBar'
 import LogoutButton from '@/components/ui/LogoutButton'
+import AdminPanel from '@/components/dynasty/AdminPanel'
 import { redirect } from 'next/navigation'
 import type { Profile } from '@/lib/types'
 
@@ -200,6 +201,8 @@ export default async function DynastyPage() {
           <p style={{ fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--muted)', lineHeight: 1.5, marginTop: 8 }}>Claim your first territory from the map.</p>
         </div>
       )}
+
+      <AdminPanel />
 
       <TabBar active="dynasty" />
     </main>

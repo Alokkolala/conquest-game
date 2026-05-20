@@ -22,8 +22,14 @@ export default async function GamePage({ params }: Props) {
   if (!challenge) redirect('/')
 
   const playerColor: 'w' | 'b' = challenge.challenger_id === user.id ? 'w' : 'b'
-  const isVsBot = challenge.challenger_id === challenge.defender_id
+  const BOT_NAMES = new Set(['crimsonguard', 'azurecrown', 'verdanthold', 'obsidianpact'])
+  const defenderUsername = (challenge.defender as { id: string; username: string } | null)?.username ?? ''
+  const isSelfChallenge = challenge.challenger_id === challenge.defender_id
+  const defenderIsBot = BOT_NAMES.has(defenderUsername.toLowerCase())
+  const isVsBot = isSelfChallenge || defenderIsBot
   const mode: 'vs-bot' | 'vs-human' = isVsBot ? 'vs-bot' : 'vs-human'
+  // Neutral claim = easy (depth 5), bot attack = harder (depth 12)
+  const stockfishDepth = isSelfChallenge ? 5 : defenderIsBot ? 12 : undefined
   const territoryName = (challenge.territory as { name: string } | null)?.name ?? 'Unknown'
 
   return (
@@ -73,6 +79,8 @@ export default async function GamePage({ params }: Props) {
         territoryName={territoryName}
         mode={mode}
         playerColor={playerColor}
+        stockfishDepth={stockfishDepth}
+        scenario={isSelfChallenge ? 'claim' : defenderIsBot ? 'attack' : undefined}
         initialFen={challenge.current_fen ?? undefined}
       />
 

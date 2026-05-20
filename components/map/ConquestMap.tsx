@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo, useRef, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { getGameSettings } from '@/lib/game-settings'
 // Loaded client-only: library measures DOM for dimensions, causing SSR/client mismatch
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const WorldMap = dynamic(() => import('react-svg-worldmap'), {
@@ -39,6 +40,10 @@ export default function ConquestMap({
 }: Props) {
   const botColorMap = useMemo(() => buildBotColorMap(), [])
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const [animationsEnabled, setAnimationsEnabled] = useState(true)
+  useEffect(() => {
+    setAnimationsEnabled(getGameSettings().mapAnimations)
+  }, [])
 
   const gameState = useMemo(
     () => buildGameState(playerCodes, botOwnerMap, isNewUser),
@@ -165,13 +170,19 @@ export default function ConquestMap({
         document.head.appendChild(styleTag)
       }
 
+      // If animations are disabled by admin settings, clear any existing CSS and bail
+      if (!animationsEnabled) {
+        styleTag.textContent = ''
+        return
+      }
+
       const claimSelectors: string[] = []
       const attackSelectors: string[] = []
 
       paths.forEach((path, i) => {
         path.classList.remove('cq-claimable-path', 'cq-attackable-path')
         const fill = path.style.fill
-        if (fill === '#e8d48a') {
+        if (fill === '#c9a03c') {
           path.classList.add(`cq-anim-${i}`)
           claimSelectors.push(`.cq-anim-${i}`)
         } else if (fill === '#5c1a1a') {
@@ -195,7 +206,7 @@ export default function ConquestMap({
       const styleTag = document.getElementById('cq-country-anim')
       if (styleTag) styleTag.textContent = ''
     }
-  }, [gameState])
+  }, [gameState, animationsEnabled])
 
   return (
     <div ref={wrapperRef} style={{ width: '100%', height: '100%', background: '#1a2e45', overflow: 'hidden' }}>

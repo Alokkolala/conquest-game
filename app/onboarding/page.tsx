@@ -24,33 +24,46 @@ export default function OnboardingPage() {
   const [color, setColor]             = useState(BANNER_COLORS[0].value)
   const [countryCode, setCountryCode] = useState<string | null>(null)
   const [countryName, setCountryName] = useState<string>('')
+  const [userId, setUserId]           = useState<string | null>(null)
+  const [signUpLoading, setSignUpLoading] = useState(false)
+  const [signUpError, setSignUpError] = useState('')
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
 
   const displayName = houseName.trim() || 'Your House'
 
+  // Authenticate the user at the Credentials step so the territory claim
+  // at the end runs with a valid session.
+  async function handleSignUp() {
+    setSignUpLoading(true)
+    setSignUpError('')
+    const supabase = createClient()
+    const { data, error: signUpErr } = await supabase.auth.signUp({ email, password })
+    if (signUpErr || !data.user) {
+      setSignUpError(signUpErr?.message ?? 'Sign-up failed')
+      setSignUpLoading(false)
+      return
+    }
+    setUserId(data.user.id)
+    setSignUpLoading(false)
+    setStep(2)
+  }
+
   async function handleCreate() {
+    if (!userId) return
     setLoading(true)
     setError('')
     const supabase = createClient()
 
-    // 1. Sign up the user
-    const { data, error: signUpErr } = await supabase.auth.signUp({ email, password })
-    if (signUpErr || !data.user) {
-      setError(signUpErr?.message ?? 'Sign-up failed')
-      setLoading(false)
-      return
-    }
-
-    // 2. Insert profile (username = cleaned houseName, display_color)
-    const username = houseName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 24) || `player_${data.user.id.slice(0, 5)}`
+    // 1. Insert profile (auth already done at Credentials step)
+    const username = houseName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 24) || `player_${userId.slice(0, 5)}`
     const { error: profileErr } = await supabase
       .from('profiles')
-      .insert({ id: data.user.id, username, display_color: color })
+      .insert({ id: userId, username, display_color: color })
 
     if (profileErr) {
       const fallback = `${username}_${Math.floor(Math.random() * 9000 + 1000)}`
-      const { error: fallbackErr } = await supabase.from('profiles').insert({ id: data.user.id, username: fallback, display_color: color })
+      const { error: fallbackErr } = await supabase.from('profiles').insert({ id: userId, username: fallback, display_color: color })
       if (fallbackErr) {
         setError('Could not create your profile. Please try again.')
         setLoading(false)
@@ -58,7 +71,7 @@ export default function OnboardingPage() {
       }
     }
 
-    // 3. Claim starting territory if the user selected one
+    // 2. Claim starting territory — session is active so /api/claim will succeed
     if (countryCode && countryName) {
       try {
         await fetch('/api/claim', {
@@ -78,7 +91,8 @@ export default function OnboardingPage() {
     <StepWelcome key={0} onNext={() => setStep(1)} />,
     <StepCredentials key={1} email={email} password={password}
       onEmail={setEmail} onPassword={setPassword}
-      onNext={() => setStep(2)} />,
+      onNext={handleSignUp}
+      loading={signUpLoading} error={signUpError} />,
     <StepHouseName key={2} name={houseName} onChange={setHouseName} displayName={displayName} onNext={() => setStep(3)} />,
     <StepBannerColor key={3} color={color} onChange={setColor} displayName={displayName} onNext={() => setStep(4)} />,
     <StepCountryPicker key={4} selectedCode={countryCode} selectedName={countryName}
@@ -151,12 +165,14 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
 }
 
 /* ─── Step 1: Credentials ─────────────────────────── */
-function StepCredentials({ email, password, onEmail, onPassword, onNext }: {
+function StepCredentials({ email, password, onEmail, onPassword, onNext, loading, error }: {
   email: string; password: string;
   onEmail: (v: string) => void; onPassword: (v: string) => void;
-  onNext: () => void
+  onNext: () => void;
+  loading: boolean;
+  error: string;
 }) {
-  const canProceed = email.includes('@') && password.length >= 6
+  const canProceed = !loading && email.includes('@') && password.length >= 6
   return (
     <div style={{ minHeight: '100dvh', width: '100%', maxWidth: 390, margin: '0 auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: '60px 24px env(safe-area-inset-bottom, 40px)' }}>
       <StepDots total={6} current={1} />
@@ -172,6 +188,9 @@ function StepCredentials({ email, password, onEmail, onPassword, onNext }: {
           <input type="password" placeholder="Password (min 6 characters)" value={password} onChange={e => onPassword(e.target.value)}
             style={{ width: '100%', height: 52, borderRadius: 14, background: 'var(--bg-warm)', border: '0.5px solid var(--line)', padding: '0 18px', boxSizing: 'border-box', fontFamily: 'var(--sans)', fontSize: 14, color: 'var(--ink)', outline: 'none' }} />
         </div>
+        {error && (
+          <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(200,49,28,0.08)', border: '0.5px solid rgba(200,49,28,0.35)', fontFamily: 'var(--sans)', fontSize: 13, color: 'var(--red)' }}>{error}</div>
+        )}
       </div>
       <button onClick={onNext} disabled={!canProceed} style={{
         width: '100%', height: 56, borderRadius: 16,
@@ -180,7 +199,8 @@ function StepCredentials({ email, password, onEmail, onPassword, onNext }: {
         fontFamily: 'var(--sans)', fontWeight: 700, fontSize: 15,
         letterSpacing: '0.06em', cursor: canProceed ? 'pointer' : 'not-allowed',
         transition: 'background 0.2s, color 0.2s',
-      }}>Continue</button>
+        opacity: loading ? 0.7 : 1,
+      }}>{loading ? 'Creating account\u2026' : 'Continue'}</button>
     </div>
   )
 }
