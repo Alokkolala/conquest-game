@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Conquest
 
-## Getting Started
+Chess, but your moves have consequences on a world map.
 
-First, run the development server:
+You start with one country. To expand, beat Stockfish. To take someone else's territory, challenge them to a game — winner takes the land. The map is the leaderboard. Biggest kingdom, strongest player. One look and you know who's winning.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+The thing that separates this from every chess app: you can lose ground while you're offline. Someone challenges your territory while you sleep, and you wake up to a notification. Now you have to log in — not to practice, not to improve your rating, but because your kingdom is at stake. That's a different kind of motivation. Chess.com doesn't have it.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What's built
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Full chess rules via chess.js + Stockfish 18 (depth 10) running in a Web Worker
+- World map with real ownership — every country colored by who controls it, updated live via Supabase Realtime
+- Territory logic: neutral countries are claimable, enemy countries adjacent to yours are attackable, everything else is out of reach until you expand
+- Auth (email + password), player profiles, dynasty page with campaign history
+- "Upgrade to Pro" in the nav — signals the monetization path (custom territory themes, priority matchmaking)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Why this is a Level 4 submission
 
-## Learn More
+The assignment asks for something that could be a real service. Conquest is the only chess concept where losing a game has a consequence inside the product that isn't your ELO. The territory mechanic creates the anxiety loop that keeps people coming back — same mechanic that made Clash of Clans work. Rage at losing your best territory is the acquisition channel. Every loss makes you want to recruit allies.
 
-To learn more about Next.js, take a look at the following resources:
+The hex-grid version ships in 12 hours. The real vision: real city maps, real neighborhoods, you physically move to claim districts. Chess determines who controls each block. That's the pitch beyond the hackathon.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Next.js 16, Supabase (auth + DB + Realtime), chess.js, react-chessboard, Stockfish 18 WASM, react-svg-worldmap, Vercel
 
-## Deploy on Vercel
+## Live
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+https://conquest-game.vercel.app
