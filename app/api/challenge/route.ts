@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient_ } from '@/lib/supabase-server'
 import { createServiceClient } from '@/lib/supabase'
+import { NAME_TO_ALPHA2 } from '@/lib/country-codes'
+
+// Derive unique hex coords from a country's alpha-2 code.
+// Range [100–2600] × [1–26] never collides with the bot seed's (0, 0).
+function hexCoords(name: string): { hex_q: number; hex_r: number } {
+  const a2 = NAME_TO_ALPHA2[name] ?? 'xx'
+  return {
+    hex_q: (a2.charCodeAt(0) - 96) * 100,
+    hex_r:  a2.charCodeAt(1) - 96,
+  }
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerClient_()
@@ -25,7 +36,7 @@ export async function POST(req: NextRequest) {
   if (!territory) {
     const { data: created, error: insertErr } = await service
       .from('territories')
-      .insert({ name: territory_name, owner_id: null, region_code: 'world' })
+      .insert({ name: territory_name, owner_id: null, ...hexCoords(territory_name) })
       .select('id')
       .single()
     if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
@@ -37,7 +48,7 @@ export async function POST(req: NextRequest) {
     .insert({
       territory_id:   territory.id,
       challenger_id:  user.id,
-      defender_id:    defender_id ?? user.id,  // self-challenge for neutral (vs bot)
+      defender_id:    defender_id ?? user.id,  // self-challenge for neutral (vs Stockfish)
       status:         'active',
     })
     .select('id')

@@ -139,7 +139,6 @@ export default function MapPanZoom({ children, minScale = 1, maxScale = 5 }: Pro
         transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
         transformOrigin: '0 0',
         width: '100%', height: '100%',
-        willChange: 'transform',
       }}>
         {children}
       </div>

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient_ } from '@/lib/supabase-server'
 import { createServiceClient } from '@/lib/supabase'
+import { NAME_TO_ALPHA2 } from '@/lib/country-codes'
+
+// Derive unique hex coords from a country's alpha-2 code.
+// Formula keeps values in [100–2600] × [1–26], never colliding with
+// the legacy bot seed which uses (0, 0) with ON CONFLICT DO NOTHING.
+function hexCoords(name: string): { hex_q: number; hex_r: number } {
+  const a2 = NAME_TO_ALPHA2[name] ?? 'xx'
+  return {
+    hex_q: (a2.charCodeAt(0) - 96) * 100,
+    hex_r:  a2.charCodeAt(1) - 96,
+  }
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerClient_()
@@ -23,7 +35,7 @@ export async function POST(req: NextRequest) {
     // Neutral country — no row yet. Create one and assign immediately.
     const { error } = await service
       .from('territories')
-      .insert({ name: territory_name, owner_id: user.id, region_code: 'world' })
+      .insert({ name: territory_name, owner_id: user.id, ...hexCoords(territory_name) })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   } else if (existing.owner_id === null) {
     // Row exists but unclaimed — update
