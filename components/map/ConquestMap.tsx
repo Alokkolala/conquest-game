@@ -16,11 +16,11 @@ interface Props {
 }
 
 const STATUS_COLORS = {
-  player:     '#111111',
+  player:     '#1a1410',
   bot:        '#3a2a2a',
   claimable:  '#b89758',
-  attackable: '#8b2020',
-  neutral:    '#ece8df',
+  attackable: '#c8311c',
+  neutral:    '#d8d3c6',
 }
 
 export default function ConquestMap({
@@ -56,44 +56,54 @@ export default function ConquestMap({
     const code = context.countryCode.toLowerCase()
     const state = stateByCode[code]
 
-    let fill = STATUS_COLORS.neutral
-    let stroke = '#d0c8bc'
-    let strokeWidth = 0.5
-    let cursor = 'default'
-
-    if (state) {
-      switch (state.status) {
-        case 'player':
-          fill = STATUS_COLORS.player
-          stroke = '#333'
-          strokeWidth = 1
-          break
-        case 'bot':
-          fill = botColorMap[code] ?? STATUS_COLORS.bot
-          stroke = '#222'
-          strokeWidth = 0.8
-          break
-        case 'claimable':
-          fill = '#f4f0e6'
-          stroke = STATUS_COLORS.claimable
-          strokeWidth = 1.5
-          cursor = 'pointer'
-          break
-        case 'attackable':
-          fill = '#3a1a1a'
-          stroke = STATUS_COLORS.attackable
-          strokeWidth = 1.5
-          cursor = 'pointer'
-          break
-        case 'neutral':
-        default:
-          fill = STATUS_COLORS.neutral
-          stroke = '#d0c8bc'
-          strokeWidth = 0.5
-      }
+    if (!state) {
+      // Unlisted country — neutral ocean-adjacent styling
+      return { fill: '#cfc9bc', stroke: '#bfb9ac', strokeWidth: 0.4, cursor: 'default', fillOpacity: 1 }
     }
 
-    return { fill, stroke, strokeWidth, cursor, fillOpacity: 1 }
+    switch (state.status) {
+      case 'player':
+        return {
+          fill: '#1a1410',
+          stroke: '#444',
+          strokeWidth: 1.2,
+          cursor: 'pointer',
+          fillOpacity: 1,
+        }
+      case 'bot':
+        return {
+          fill: botColorMap[code] ?? STATUS_COLORS.bot,
+          stroke: '#111',
+          strokeWidth: 0.7,
+          cursor: 'default',
+          fillOpacity: 1,
+        }
+      case 'claimable':
+        return {
+          fill: '#f0e8d0',
+          stroke: '#b89758',
+          strokeWidth: 1.8,
+          cursor: 'pointer',
+          fillOpacity: 1,
+        }
+      case 'attackable':
+        return {
+          fill: '#2e1010',
+          stroke: '#c8311c',
+          strokeWidth: 1.8,
+          cursor: 'pointer',
+          fillOpacity: 1,
+        }
+      case 'neutral':
+      default:
+        return {
+          fill: '#d8d3c6',
+          stroke: '#c4bfb2',
+          strokeWidth: 0.4,
+          cursor: 'default',
+          fillOpacity: 1,
+        }
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,7 +133,7 @@ export default function ConquestMap({
     <div style={{ width: '100%', background: 'var(--bg)', overflow: 'hidden' }}>
       <WorldMap
         color="#b89758"
-        backgroundColor="var(--bg)"
+        backgroundColor="#1a2e45"
         size={size}
         data={mapData as any}
         styleFunction={styleFunction}

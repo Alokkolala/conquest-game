@@ -14,22 +14,22 @@ export interface BotCluster {
 export const BOT_CLUSTERS: BotCluster[] = [
   {
     username: 'CrimsonGuard',
-    color: '#8b2020',
+    color: '#9b2424',
     countries: ['fr', 'es', 'pt', 'be', 'nl'],  // Western Europe
   },
   {
     username: 'AzureCrown',
-    color: '#1a3a6b',
+    color: '#1a4a8a',
     countries: ['ru', 'ua', 'by', 'pl', 'ro'],  // Eastern Europe
   },
   {
     username: 'VerdantHold',
-    color: '#1a5c2a',
+    color: '#1c6835',
     countries: ['in', 'pk', 'bd', 'mm', 'th'],  // South/Southeast Asia
   },
   {
     username: 'ObsidianPact',
-    color: '#3a2a1a',
+    color: '#4a3520',
     countries: ['tr', 'ir', 'iq', 'sa', 'eg'],  // Middle East
   },
 ]

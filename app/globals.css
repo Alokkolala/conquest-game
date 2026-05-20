@@ -63,3 +63,15 @@ html, body {
 
 /* Spinner */
 @keyframes cq-spin { to { transform: rotate(360deg); } }
+
+/* Claimable country pulse */
+@keyframes cq-claimable-pulse {
+  0%, 100% { fill: #f0e8d0; stroke: #b89758; }
+  50%       { fill: #e0d0a0; stroke: #d4aa5e; }
+}
+
+/* Attackable country pulse */
+@keyframes cq-attackable-pulse {
+  0%, 100% { fill: #2e1010; stroke: #c8311c; }
+  50%       { fill: #4a1818; stroke: #e84030; }
+}
