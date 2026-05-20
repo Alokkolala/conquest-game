@@ -2,7 +2,6 @@ import { createServerClient_ } from '@/lib/supabase-server'
 import TabBar from '@/components/ui/TabBar'
 import { redirect } from 'next/navigation'
 import type { Profile } from '@/lib/types'
-import { DEFAULT_COUNTRY_STATUS } from '@/lib/world-territories'
 
 export default async function DynastyPage() {
   const supabase = await createServerClient_()
@@ -19,10 +18,7 @@ export default async function DynastyPage() {
     .eq('owner_id', user.id)
 
   const owned = myTerritories ?? []
-  const crownValue = owned.reduce((s, t) => {
-    const def = DEFAULT_COUNTRY_STATUS[t.name]
-    return s + (def?.value ?? 5)
-  }, 0)
+  const crownValue = owned.length * 5
 
   // Recent completed challenges involving the user
   const { data: recentChallenges } = await supabase
@@ -137,7 +133,6 @@ export default async function DynastyPage() {
           </div>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 16px 8px' }} className="cq-scroll">
             {owned.map(t => {
-              const def = DEFAULT_COUNTRY_STATUS[t.name]
               return (
                 <div key={t.id} style={{
                   flexShrink: 0, width: 120, height: 130,
@@ -153,7 +148,7 @@ export default async function DynastyPage() {
                   </div>
                   <div>
                     <div style={{ fontFamily: 'var(--serif)', fontSize: 22, lineHeight: 1 }}>
-                      {Math.round((def?.value ?? 5) * 10) / 10}
+                      5
                       <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'rgba(255,255,255,0.5)', marginLeft: 3 }}>pts</span>
                     </div>
                   </div>
