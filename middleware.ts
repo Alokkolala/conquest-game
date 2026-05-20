@@ -23,15 +23,14 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuth = request.nextUrl.pathname.startsWith('/auth')
-  const isApi  = request.nextUrl.pathname.startsWith('/api')
+  const path = request.nextUrl.pathname
+  const isPublic = path.startsWith('/auth') || path.startsWith('/onboarding') || path.startsWith('/api') || path.startsWith('/_next')
 
-  // Auth guard temporarily disabled for local preview
-  // if (!user && !isAuth && !isApi) {
-  //   const loginUrl = request.nextUrl.clone()
-  //   loginUrl.pathname = '/auth'
-  //   return NextResponse.redirect(loginUrl)
-  // }
+  if (!user && !isPublic) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/auth'
+    return NextResponse.redirect(loginUrl)
+  }
 
   return supabaseResponse
 }
