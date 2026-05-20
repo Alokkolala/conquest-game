@@ -1,7 +1,13 @@
 'use client'
 
 import { useMemo, useRef, useEffect } from 'react'
-import WorldMap from 'react-svg-worldmap'
+import dynamic from 'next/dynamic'
+// Loaded client-only: library measures DOM for dimensions, causing SSR/client mismatch
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const WorldMap = dynamic(() => import('react-svg-worldmap'), {
+  ssr: false,
+  loading: () => <div style={{ width: '100%', height: '100%', background: '#1a2e45' }} />,
+}) as any
 import { buildGameState, buildMapData, buildBotColorMap } from '@/lib/game-state'
 import { ALPHA2_TO_NAME } from '@/lib/country-codes'
 import type { CountryFeature } from '@/lib/types'
@@ -81,17 +87,17 @@ export default function ConquestMap({
         }
       case 'claimable':
         return {
-          fill: '#f0e8d0',
+          fill: '#e8d48a',
           stroke: '#b89758',
-          strokeWidth: 1.8,
+          strokeWidth: 2,
           cursor: 'pointer',
           fillOpacity: 1,
         }
       case 'attackable':
         return {
-          fill: '#2e1010',
-          stroke: '#c8311c',
-          strokeWidth: 1.8,
+          fill: '#5c1a1a',
+          stroke: '#e84030',
+          strokeWidth: 2,
           cursor: 'pointer',
           fillOpacity: 1,
         }
@@ -111,11 +117,25 @@ export default function ConquestMap({
   function handleClick(context: any) {
     if (!onCountryClick) return
     const code = context.countryCode?.toLowerCase()
-    if (!code) return
+    if (!code || !ALPHA2_TO_NAME[code]) return  // unknown code — ignore
+
     const state = stateByCode[code]
-    if (!state || (state.status !== 'claimable' && state.status !== 'attackable' && state.status !== 'player')) {
+    const status = state?.status ?? 'neutral'
+
+    if (status !== 'claimable' && status !== 'attackable' && status !== 'player') {
+      // Show country name info — TerritorySheet renders an "Out of reach" display
+      onCountryClick({
+        id: code,
+        name: ALPHA2_TO_NAME[code],
+        path: '',
+        center: [0, 0],
+        status: 'neutral',
+        owner: state?.ownerUsername,
+        value: 1,
+      })
       return
     }
+
     const feature: CountryFeature = {
       id: code,
       name: ALPHA2_TO_NAME[code] ?? context.countryName ?? code,
@@ -151,10 +171,10 @@ export default function ConquestMap({
       paths.forEach((path, i) => {
         path.classList.remove('cq-claimable-path', 'cq-attackable-path')
         const fill = path.style.fill
-        if (fill === '#f0e8d0') {
+        if (fill === '#e8d48a') {
           path.classList.add(`cq-anim-${i}`)
           claimSelectors.push(`.cq-anim-${i}`)
-        } else if (fill === '#2e1010') {
+        } else if (fill === '#5c1a1a') {
           path.classList.add(`cq-anim-${i}`)
           attackSelectors.push(`.cq-anim-${i}`)
         }
