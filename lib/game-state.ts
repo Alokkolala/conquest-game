@@ -93,10 +93,7 @@ export function buildGameState(
     }
   }
 
-  // All known codes: player + bot + neighbors
-  const allKnown = new Set([...playerSet, ...botSet, ...adjacentToPlayer])
-
-  return Array.from(allKnown).map(code => {
+  return Object.keys(ALPHA2_TO_NAME).map(code => {
     const name = ALPHA2_TO_NAME[code] ?? code.toUpperCase()
 
     if (playerSet.has(code)) {
