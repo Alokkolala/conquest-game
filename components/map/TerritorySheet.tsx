@@ -45,6 +45,91 @@ export default function TerritorySheet({ feature, isNewUser = false, onClose, on
     isNewUser              ? 'Your first territory. Plant your banner here to begin your conquest.' :
     'Unclaimed. First win plants your banner.'
 
+  // Out-of-reach: bot-owned country not adjacent to player territory
+  const isOutOfReach = status === 'neutral' && owner != null
+
+  if (isOutOfReach) {
+    return (
+      <>
+        {/* Backdrop */}
+        <div
+          role="presentation"
+          aria-hidden="true"
+          onClick={onClose}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 45,
+            background: 'rgba(0,0,0,0.12)',
+          }}
+        />
+
+        {/* Sheet */}
+        <div style={{
+          position: 'fixed', bottom: 0,
+          left: '50%', transform: 'translateX(-50%)',
+          width: '100%', maxWidth: 390,
+          zIndex: 50,
+          background: 'var(--bg)',
+          borderTopLeftRadius: 32, borderTopRightRadius: 32,
+          padding: '14px 24px 48px',
+          boxShadow: '0 -20px 60px rgba(0,0,0,0.15)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {/* Handle */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+            <div style={{ width: 36, height: 4, borderRadius: 4, background: 'var(--line)' }} />
+          </div>
+
+          {/* Code + status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+            <span style={{
+              fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600,
+              letterSpacing: '0.14em', color: 'var(--muted)',
+            }}>{feature.id.toUpperCase()}</span>
+            <span style={{ width: 3, height: 3, borderRadius: 999, background: 'var(--muted)', display: 'inline-block' }} />
+            <span style={{
+              fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
+              letterSpacing: '0.14em', color: 'var(--muted)', textTransform: 'uppercase',
+            }}>OUT OF REACH</span>
+          </div>
+
+          {/* Country name */}
+          <div style={{
+            fontFamily: 'var(--serif)', fontSize: 44, lineHeight: 1,
+            letterSpacing: '-0.025em', marginTop: 12,
+          }}>{name}</div>
+
+          {/* Owner label */}
+          <div style={{
+            fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '0.12em',
+            color: 'var(--muted)', marginTop: 10,
+          }}>
+            Held by {owner}
+          </div>
+
+          {/* Out-of-reach message */}
+          <p style={{
+            fontFamily: 'var(--serif)', fontSize: 17, lineHeight: 1.35,
+            color: 'var(--ink-soft)', marginTop: 16, fontStyle: 'italic',
+          }}>
+            Out of reach — expand your borders first.
+          </p>
+
+          {/* Close button */}
+          <div style={{ marginTop: 24 }}>
+            <button onClick={onClose} style={{
+              width: '100%', height: 50, borderRadius: 14,
+              background: 'transparent', color: 'var(--ink)',
+              border: '1px solid var(--line)',
+              fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}>Back to Map</button>
+          </div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       {/* Backdrop */}
