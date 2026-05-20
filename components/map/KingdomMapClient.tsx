@@ -109,6 +109,7 @@ export default function KingdomMapClient({
     if (!selected || !currentUserId) return
     const territory = findTerritory(selected.name)
     if (!territory) return
+    setActionLoading(true)
     const { data: challenges } = await supabase
       .from('challenges')
       .select('id')
@@ -117,6 +118,7 @@ export default function KingdomMapClient({
       .in('status', ['pending', 'active'])
       .order('created_at', { ascending: false })
       .limit(1)
+    setActionLoading(false)
     setSelected(null)
     if (challenges?.[0]) router.push(`/game/${challenges[0].id}`)
   // eslint-disable-next-line react-hooks/exhaustive-deps

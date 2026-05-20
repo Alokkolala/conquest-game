@@ -9,12 +9,16 @@ export default function ForfeitButton({ challengeId }: { challengeId: string }) 
 
   async function handleForfeit() {
     setLoading(true)
-    await fetch('/api/resolve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ challenge_id: challengeId, winner: 'challenger' }),
-    })
-    router.refresh()
+    try {
+      await fetch('/api/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challenge_id: challengeId, winner: 'challenger' }),
+      })
+      router.refresh()
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
