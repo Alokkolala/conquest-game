@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import WorldMap from 'react-svg-worldmap'
 import { buildGameState, buildMapData, buildBotColorMap } from '@/lib/game-state'
 import { ALPHA2_TO_NAME } from '@/lib/country-codes'
@@ -32,6 +32,7 @@ export default function ConquestMap({
   onCountryClick,
 }: Props) {
   const botColorMap = useMemo(() => buildBotColorMap(), [])
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
   const gameState = useMemo(
     () => buildGameState(playerCodes, botOwnerMap, isNewUser),
@@ -129,8 +130,55 @@ export default function ConquestMap({
     onCountryClick(feature)
   }
 
+  // Inject CSS animation onto claimable/attackable SVG paths after each render
+  useEffect(() => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+
+    const timer = setTimeout(() => {
+      const paths = wrapper.querySelectorAll<SVGPathElement>('svg path')
+
+      let styleTag = document.getElementById('cq-country-anim') as HTMLStyleElement | null
+      if (!styleTag) {
+        styleTag = document.createElement('style')
+        styleTag.id = 'cq-country-anim'
+        document.head.appendChild(styleTag)
+      }
+
+      const claimSelectors: string[] = []
+      const attackSelectors: string[] = []
+
+      paths.forEach((path, i) => {
+        path.classList.remove('cq-claimable-path', 'cq-attackable-path')
+        const fill = path.style.fill
+        if (fill === '#f0e8d0') {
+          path.classList.add(`cq-anim-${i}`)
+          claimSelectors.push(`.cq-anim-${i}`)
+        } else if (fill === '#2e1010') {
+          path.classList.add(`cq-anim-${i}`)
+          attackSelectors.push(`.cq-anim-${i}`)
+        }
+      })
+
+      styleTag.textContent = [
+        claimSelectors.length > 0
+          ? `${claimSelectors.join(',')} { animation: cq-claimable-pulse 2.4s ease-in-out infinite; }`
+          : '',
+        attackSelectors.length > 0
+          ? `${attackSelectors.join(',')} { animation: cq-attackable-pulse 1.7s ease-in-out infinite; }`
+          : '',
+      ].filter(Boolean).join('\n')
+    }, 120)
+
+    return () => {
+      clearTimeout(timer)
+      const styleTag = document.getElementById('cq-country-anim')
+      if (styleTag) styleTag.textContent = ''
+    }
+  }, [gameState])
+
   return (
-    <div style={{ width: '100%', background: 'var(--bg)', overflow: 'hidden' }}>
+    <div ref={wrapperRef} style={{ width: '100%', background: '#1a2e45', overflow: 'hidden' }}>
       <WorldMap
         color="#b89758"
         backgroundColor="#1a2e45"
