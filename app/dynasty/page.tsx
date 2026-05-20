@@ -1,5 +1,6 @@
 import { createServerClient_ } from '@/lib/supabase-server'
 import TabBar from '@/components/ui/TabBar'
+import LogoutButton from '@/components/ui/LogoutButton'
 import { redirect } from 'next/navigation'
 import type { Profile } from '@/lib/types'
 
@@ -92,6 +93,7 @@ export default async function DynastyPage() {
             {owned.length} TERRITORIES · {total} GAMES PLAYED
           </span>
         </div>
+        <LogoutButton />
       </div>
 
       {/* Stats card */}
