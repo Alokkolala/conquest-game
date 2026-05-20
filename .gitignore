@@ -42,4 +42,8 @@ next-env.d.ts
 
 # claude helper
 .claude/
+.gstack/
+docs/superpowers/
+__tests__/
+CLAUDE.md
 
