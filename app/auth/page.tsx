@@ -111,7 +111,6 @@ function SignInView({ onBack }: { onBack: () => void }) {
     const { error: err } = await supabase.auth.signInWithPassword({ email, password })
     if (err) { setError(err.message); setLoading(false); return }
     router.push('/')
-    router.refresh()
   }
 
   return (
