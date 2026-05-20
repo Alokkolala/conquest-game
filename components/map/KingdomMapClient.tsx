@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import ConquestMap from './ConquestMap'
 import TerritorySheet from './TerritorySheet'
+import MapPanZoom from './MapPanZoom'
 import type { Territory, CountryFeature } from '@/lib/types'
 import { NAME_TO_ALPHA2 } from '@/lib/country-codes'
 import { buildBotOwnerMap } from '@/lib/game-state'
@@ -64,14 +65,16 @@ export default function KingdomMapClient({
 
   return (
     <>
-      <ConquestMap
-        playerCodes={playerCodes}
-        botOwnerMap={liveBotOwnerMap}
-        currentUsername={currentUsername}
-        isNewUser={isNewUser}
-        size="xxl"
-        onCountryClick={setSelected}
-      />
+      <MapPanZoom minScale={1} maxScale={5}>
+        <ConquestMap
+          playerCodes={playerCodes}
+          botOwnerMap={liveBotOwnerMap}
+          currentUsername={currentUsername}
+          isNewUser={isNewUser}
+          size="xxl"
+          onCountryClick={setSelected}
+        />
+      </MapPanZoom>
       {selected && (
         <TerritorySheet
           feature={selected}
