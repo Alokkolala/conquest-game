@@ -15,12 +15,22 @@ export async function POST(req: NextRequest) {
 
   const service = createServiceClient()
 
-  const { data: territory } = await service
+  // Find existing row, or create one for neutral countries not yet in DB
+  let { data: territory } = await service
     .from('territories')
     .select('id')
     .eq('name', territory_name)
-    .single()
-  if (!territory) return NextResponse.json({ error: 'Territory not found' }, { status: 404 })
+    .maybeSingle()
+
+  if (!territory) {
+    const { data: created, error: insertErr } = await service
+      .from('territories')
+      .insert({ name: territory_name, owner_id: null, region_code: 'world' })
+      .select('id')
+      .single()
+    if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
+    territory = created
+  }
 
   const { data: challenge, error } = await service
     .from('challenges')
